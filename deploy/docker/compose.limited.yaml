@@ -1,0 +1,6 @@
+# Optional for shared small servers. Apply the same overlay on every up command.
+# Limits the entire application, including runtime Firefly publishing.
+services:
+  aigoni:
+    cpus: "${AIGONI_CPUS:-1.0}"
+    mem_limit: ${AIGONI_MEMORY:-2g}

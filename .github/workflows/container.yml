@@ -1,0 +1,50 @@
+name: Container image
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: container-main
+  cancel-in-progress: false
+
+# Note: 发布移到 CI，服务器只拉取；见 docs/decisions/firefly-integration.md。
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Build Linux amd64 image (includes Go tests)
+        run: |
+          docker build --platform linux/amd64 \
+            --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            -t aigoni-firefly:docker-smoke .
+      - name: Verify healthcheck and real publishing
+        run: |
+          node --test deploy/docker/healthcheck.test.cjs
+          node deploy/docker/smoke.cjs
+      - name: Publish verified image
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          trap 'docker logout ghcr.io' EXIT
+          docker tag aigoni-firefly:docker-smoke "$IMAGE:sha-$GITHUB_SHA"
+          docker tag aigoni-firefly:docker-smoke "$IMAGE:latest"
+          docker push "$IMAGE:sha-$GITHUB_SHA"
+          docker push "$IMAGE:latest"
+          printf '### Published (linux/amd64)\n\n`%s:sha-%s`\n\n`%s:latest`\n' \
+            "$IMAGE" "$GITHUB_SHA" "$IMAGE" >> "$GITHUB_STEP_SUMMARY"

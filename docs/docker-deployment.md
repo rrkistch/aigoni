@@ -2,6 +2,8 @@
 
 这套部署只需要一个应用容器，不需要数据库。aigoni 提供网站、管理后台和 API；容器内的 Node/pnpm 在发布时构建 Firefly。
 
+小内存服务器优先使用 [GitHub 预构建镜像部署](ghcr-deployment.md)，不在服务器编译。下面保留从源码构建的操作流程。
+
 ## 1. 第一次启动
 
 服务器需安装 Docker Engine 和 Docker Compose 2.30+，使用 Linux 容器。镜像构建、首次发布及 AI 服务需要能访问相关网络服务。建议给构建留出至少 2 GB 可用内存，文章多时适当增加。

@@ -251,4 +251,4 @@ Aigoni 使用 [MIT License](./LICENSE) 发布。
 
 ### Docker 部署
 
-推荐使用单容器 Compose 部署，包含 Firefly 构建工具并独立持久化数据。首次启动、HTTPS、备份和升级步骤见 [Docker 部署指南](docs/docker-deployment.md)。
+推荐使用 [GitHub 预构建镜像](docs/ghcr-deployment.md) 单容器 Compose 部署，服务器无需编译，包含 Firefly 发布工具并独立持久化数据。首次启动、HTTPS、备份和升级步骤见 [Docker 部署指南](docs/docker-deployment.md)。
