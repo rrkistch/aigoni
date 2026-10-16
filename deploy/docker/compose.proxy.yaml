@@ -1,0 +1,11 @@
+# Optional: only use if your reverse proxy is already on this external Docker network.
+services:
+  aigoni:
+    networks:
+      - default
+      - proxy
+
+networks:
+  proxy:
+    external: true
+    name: ${AIGONI_PROXY_NETWORK:-proxy}

@@ -248,3 +248,7 @@ Aigoni 使用 [MIT License](./LICENSE) 发布。
 ## Firefly 原版主题整合
 
 可选的 Firefly 模式保留原主题，接入公开内容静态发布和个人知识工作区。默认仍使用原 aigoni 前端。安装、构建状态和回退方法见 [整合说明](docs/firefly-integration.md)。
+
+### Docker 部署
+
+推荐使用单容器 Compose 部署，包含 Firefly 构建工具并独立持久化数据。首次启动、HTTPS、备份和升级步骤见 [Docker 部署指南](docs/docker-deployment.md)。

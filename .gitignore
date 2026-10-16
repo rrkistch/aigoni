@@ -21,3 +21,8 @@ config.yaml
 /.tools/
 /firefly/.aigoni/
 /.pnpm-store/
+
+# Docker deployment secrets and local backups
+/docker.env
+/compose.env
+/backups/

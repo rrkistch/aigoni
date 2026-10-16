@@ -348,3 +348,23 @@ func TestFireflyRetainsLegacyAssetNamespaces(t *testing.T) {
 		}
 	}
 }
+
+func TestFireflyContainerRestartRebuildsUnchangedContent(t *testing.T) {
+	s := fireflyTestServer(t)
+	s.siteBuild.run = fakeRelease
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	s.StartSiteBuild(ctx)
+	previous := waitBuild(t, s, "published")
+	env := *s.env
+	env.FireflyRebuildOnStart = true
+	next := New(s.root, s.cfg, &env)
+	next.siteBuild.run = fakeRelease
+	nextCtx, stop := context.WithCancel(context.Background())
+	defer stop()
+	next.StartSiteBuild(nextCtx)
+	updated := waitBuild(t, next, "published")
+	if updated.PublishedRevision <= previous.PublishedRevision || updated.Active == previous.Active {
+		t.Fatal("new image did not get a new release")
+	}
+}

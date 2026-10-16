@@ -14,6 +14,12 @@ Go 管理串行构建、公开快照、发布版本及失败状态。只有公�
 
 私人工作区复用原来的 Session、CSRF、revision 和 Agent run 接口；不新增公开 AI 服务，也不把 API Key 放到浏览器。笔记附件现在也要求管理员会话。
 
+### Docker 运行布局
+
+镜像包含 Go 程序、Firefly 源码与 Node/pnpm 构建工具，只有 /data 持久化。源码不放进数据卷，避免卷中的旧主题遮住升级后的镜像内容。容器使用非 root 的 node 用户。
+
+容器默认开启 FIREFLY_REBUILD_ON_START，确保仅更新代码或主题时也生成新版本；原生运行仍默认复用未变化的发布版本。健康检查读取 Go API，不把首次静态构建期间的首页 503 误判为进程故障。SIGTERM 会取消构建并给 HTTP 请求留出结束时间。
+
 ## Alternatives considered
 
 - 给 aigoni 原前端换皮：不能保留 Firefly 原版，不采用。

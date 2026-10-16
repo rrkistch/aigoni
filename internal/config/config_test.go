@@ -374,3 +374,36 @@ func TestLoadDefaultsUTCOffsetToUTC(t *testing.T) {
 		t.Fatalf("default UTCOffset = %q want +00:00", cfg.Site.UTCOffset)
 	}
 }
+
+func TestLoadEnvFireflyStartupRebuildIsOptIn(t *testing.T) {
+	t.Setenv("FIREFLY_REBUILD_ON_START", "")
+	path := filepath.Join(t.TempDir(), ".env")
+	if err := os.WriteFile(path, []byte("ADMIN_PASSWORD=secret-pass\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	env, err := LoadEnv(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if env.FireflyRebuildOnStart {
+		t.Fatal("native default must not rebuild unchanged content")
+	}
+	if err := os.WriteFile(path, []byte("ADMIN_PASSWORD=secret-pass\nFIREFLY_REBUILD_ON_START=true\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	env, err = LoadEnv(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !env.FireflyRebuildOnStart {
+		t.Fatal("startup rebuild flag not loaded")
+	}
+	t.Setenv("FIREFLY_REBUILD_ON_START", "false")
+	env, err = LoadEnv(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if env.FireflyRebuildOnStart {
+		t.Fatal("process environment must override env file")
+	}
+}

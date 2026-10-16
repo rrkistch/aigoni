@@ -215,7 +215,8 @@ func (s *Server) StartSiteBuild(ctx context.Context) {
 	if s.siteBuild == nil {
 		return
 	}
-	_ = s.queueSiteBuild(false)
+	// Containers opt in so a new image refreshes the theme even with unchanged content.
+	_ = s.queueSiteBuild(s.env.FireflyRebuildOnStart)
 	go s.siteBuildLoop(ctx)
 	// Reconcile external Markdown/config edits without putting private data into snapshots.
 	go func() {

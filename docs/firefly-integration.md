@@ -2,6 +2,10 @@
 
 Firefly 源码位于项目的 firefly 目录；aigoni 原来的 frontend/web 和 frontend/admin 保留。默认仍为原版 aigoni，不会自动替换已有部署。
 
+## Docker 部署
+
+习惯使用 Docker 时，优先参照 [Docker 部署指南](docker-deployment.md)。无需在服务器单独安装 Go、Node 或 pnpm。
+
 ## 首次运行
 
 服务器需要 Go 1.22+（构建 aigoni）、Node.js 22.23+ 和 pnpm。Firefly 依赖以 pnpm-lock.yaml 为准。
@@ -60,5 +64,5 @@ Firefly： https://github.com/CuteLeaf/Firefly
 - 浏览器回归通过：公开搜索、登录、CSRF、内容创建、编辑冲突保留、Wiki 浏览、模拟 AI 流式响应、明暗窄屏与退出。
 - Go 服务和配置包回归通过；真实编译器测试验证了“管理员 API 修改文章 → Astro 构建 → 切换公开版本”。
 - Windows 本地可执行文件以 go build -buildvcs=false 构建，位于 .tools/Aigoni.exe。关闭的仅是 VCS 元数据嵌入；沙箱无法执行系统 Git 来采集该元数据。临时 Go 编译器位于 .tools/go/bin/go.exe，没有安装到系统。
-- Windows 旧版沙箱中两项 Agent 测试受符号链接和读取权限限制，需要在支持对应权限的环境补验。
+- Windows 旧版沙箱中两项 Agent 测试曾受符号链接/读取权限限制；新增 Docker 构建已在 Linux、Go 1.26 下运行 go test ./...，全部通过，未跳过这些测试。
 - 未部署生产环境，未调用真实付费模型。Wiki/AI 的真实服务连接仍使用原有 WIKI_APIKEY、WIKI_BASEURL、WIKI_MODEL 配置。

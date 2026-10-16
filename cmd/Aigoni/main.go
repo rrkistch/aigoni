@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 	"time"
 
 	"aigoni"
@@ -53,7 +56,7 @@ func main() {
 		log.Fatal(err)
 	}
 	srv := server.NewWithFrontendFS(root, cfg, env, webFrontendFS, adminFrontendFS)
-	cleanupCtx, cancelCleanup := context.WithCancel(context.Background())
+	cleanupCtx, cancelCleanup := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancelCleanup()
 	srv.StartWikiAgentCleanup()
 	srv.StartDraftCleanup(cleanupCtx)
@@ -69,8 +72,23 @@ func main() {
 		ReadTimeout:       30 * time.Second,
 		IdleTimeout:       60 * time.Second,
 	}
+	// Docker sends SIGTERM: cancel the compiler tree and drain in-flight HTTP writes.
+	shutdownDone := make(chan struct{})
+	go func() {
+		defer close(shutdownDone)
+		<-cleanupCtx.Done()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		defer cancel()
+		if err := httpServer.Shutdown(shutdownCtx); err != nil {
+			log.Printf("HTTP shutdown: %v", err)
+			_ = httpServer.Close()
+		}
+	}()
 	log.Printf("Aigoni listening on %s", config.Address(env))
-	if err := httpServer.ListenAndServe(); err != nil {
+	if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		cancelCleanup()
+		<-shutdownDone
 		log.Fatal(err)
 	}
+	<-shutdownDone
 }

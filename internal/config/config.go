@@ -47,14 +47,15 @@ type PathsConfig struct {
 }
 
 type Env struct {
-	FrontendMode     string
-	FireflySourceDir string
-	FireflyBuildDir  string
-	FireflyNode      string
-	AdminPassword    string
-	AigoniAPIKey     string
-	Port             int
-	AdminPath        string
+	FrontendMode          string
+	FireflySourceDir      string
+	FireflyBuildDir       string
+	FireflyNode           string
+	FireflyRebuildOnStart bool
+	AdminPassword         string
+	AigoniAPIKey          string
+	Port                  int
+	AdminPath             string
 	// CookieSecure 为 true 时后台会话 Cookie 会带上 Secure 标记，仅用于 HTTPS 部署。
 	CookieSecure bool
 	// WebFrontendDir and AdminFrontendDir override embedded SPA builds when set.
@@ -115,7 +116,7 @@ func LoadEnv(path string) (*Env, error) {
 		return nil, err
 	}
 	keys := []string{
-		"FRONTEND_MODE", "FIREFLY_SOURCE_DIR", "FIREFLY_BUILD_DIR", "FIREFLY_NODE",
+		"FRONTEND_MODE", "FIREFLY_SOURCE_DIR", "FIREFLY_BUILD_DIR", "FIREFLY_NODE", "FIREFLY_REBUILD_ON_START",
 		"ADMIN_PASSWORD",
 		"AIGONI_API_KEY",
 		"PORT",
@@ -182,6 +183,7 @@ func LoadEnv(path string) (*Env, error) {
 		FireflySourceDir:       strings.TrimSpace(values["FIREFLY_SOURCE_DIR"]),
 		FireflyBuildDir:        strings.TrimSpace(values["FIREFLY_BUILD_DIR"]),
 		FireflyNode:            strings.TrimSpace(values["FIREFLY_NODE"]),
+		FireflyRebuildOnStart:  parseBoolEnv(values["FIREFLY_REBUILD_ON_START"]),
 		AdminPassword:          values["ADMIN_PASSWORD"],
 		AigoniAPIKey:           values["AIGONI_API_KEY"],
 		Port:                   port,
