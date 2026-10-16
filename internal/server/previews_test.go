@@ -4,6 +4,7 @@ import (
 	"aigoni/internal/content"
 	"encoding/json"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -57,6 +58,21 @@ func TestAuthenticatedPreviewNeverActivatesPublicDraft(t *testing.T) {
 	s.Handler().ServeHTTP(w, r)
 	if w.Code != 200 || !strings.Contains(w.Body.String(), "PREVIEW_PRIVATE_SENTINEL") || w.Header().Get("Cache-Control") != "no-store" {
 		t.Fatal(w.Code, w.Body.String())
+	}
+	writeFile(t, filepath.Join(s.siteBuild.root, "previews", state.ID, "_astro", "private.js"), "PRIVATE_PREVIEW_ASSET")
+	assetURL := "/_firefly/" + state.ID + "/_astro/private.js"
+	r = httptest.NewRequest("GET", assetURL, nil)
+	w = httptest.NewRecorder()
+	s.Handler().ServeHTTP(w, r)
+	if w.Code != 404 {
+		t.Fatal("anonymous preview asset", w.Code)
+	}
+	r = httptest.NewRequest("GET", assetURL, nil)
+	r.AddCookie(cookie)
+	w = httptest.NewRecorder()
+	s.Handler().ServeHTTP(w, r)
+	if w.Code != 200 || w.Header().Get("Cache-Control") != "no-store" {
+		t.Fatal("private asset cache", w.Code, w.Header())
 	}
 	if s.siteBuild.state.Active != "" {
 		t.Fatal("preview activated public version")

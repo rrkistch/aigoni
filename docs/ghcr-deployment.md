@@ -6,12 +6,13 @@ GitHub Actions 负责 Go 编译、测试和前端依赖安装，通过容器发�
 
 推送 main 或在 Actions 的 Container image 中手动运行，会生成：
 
-- `ghcr.io/rrkistch/aigoni:latest`：最近通过验收的 main 镜像。
-- `ghcr.io/rrkistch/aigoni:sha-完整提交号`：对应源码版本，推荐正式部署固定使用。
+- `ghcr.io/rrkistch/aigoni:latest`：最近正式发布的稳定镜像；普通 main 提交不更新它。
+- `ghcr.io/rrkistch/aigoni:sha-完整提交号`：通过 CI 的 main 候选版本，仍需查看该提交的功能完成状态。
+- `ghcr.io/rrkistch/aigoni:v主版本.次版本.修订号`：推送 `container-v主版本.次版本.修订号` 标签后的正式版本，同时更新 latest。完整回退可固定使用镜像 digest。
 
 查看仓库 Actions 的 Container image，只有整个任务绿色成功才算发布完成。首次创建的 GHCR 包默认可能是私有：在 GitHub 用户主页 Packages → aigoni → Package settings → Change visibility 中选择 Public。公开仓库不代表镜像自动公开。公开后服务器无需登录；密码、文章、笔记不会进入镜像。
 
-工作流使用临时 GITHUB_TOKEN，不需要把个人令牌写入仓库。若发布报 packages 权限错误，在仓库设置中检查 Actions 是否获准运行及组织包策略。手动运行只允许 main。镜像不会自动更新正在运行的服务器。
+工作流使用临时 GITHUB_TOKEN，不需要把个人令牌写入仓库。若发布报 packages 权限错误，在仓库设置中检查 Actions 是否获准运行及组织包策略。手动运行使用 main；正式发布使用 container-v 标签，不复用已有版本号。镜像不会自动更新正在运行的服务器。
 
 ## 服务器启动
 

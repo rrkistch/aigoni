@@ -298,8 +298,8 @@ func (s *Server) siteBuildLoop(ctx context.Context) {
 			err = os.MkdirAll(output, 0755)
 		}
 		if err == nil {
-			job, cancel := context.WithTimeout(ctx, 15*time.Minute)
 			b.buildMu.Lock()
+			job, cancel := context.WithTimeout(ctx, 15*time.Minute)
 			err = b.run(job, input, output)
 			b.buildMu.Unlock()
 			cancel()
@@ -550,7 +550,9 @@ func (s *Server) serveFirefly(w http.ResponseWriter, r *http.Request, admin bool
 		return
 	}
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	if asset {
+	if strings.HasPrefix(r.URL.Path, "/_firefly/preview-") {
+		w.Header().Set("Cache-Control", "no-store")
+	} else if asset {
 		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 	} else {
 		w.Header().Set("Cache-Control", "no-cache")

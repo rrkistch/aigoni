@@ -3,9 +3,9 @@
  import {api} from "./api";
  import ConfigFields from "./ConfigFields.svelte";
  let preview=$state<any>(null);let previewTimer:ReturnType<typeof setInterval>|undefined;let history=$state<any[]>([]);let data=$state<any>(null);let selected=$state("appearance");let value=$state<any>({});let dirty=$state(false);let busy=$state(false);let error=$state("");let message=$state("");
- async function load(){data=await api("/theme-settings");value=structuredClone(data.effective[selected]);dirty=false;}
+ async function load(){data=await api("/theme-settings");value=JSON.parse(JSON.stringify(data.effective[selected]));dirty=false;}
  onMount(()=>{void load().catch(e=>error=e.message);return()=>{if(previewTimer)clearInterval(previewTimer);};});
- function select(name:string){if(dirty&&!confirm("放弃当前未保存修改？"))return;selected=name;value=structuredClone(data.effective[name]);dirty=false;message="";error="";}
+ function select(name:string){if(dirty&&!confirm("放弃当前未保存修改？"))return;selected=name;value=JSON.parse(JSON.stringify(data.effective[name]));dirty=false;message="";error="";}
  async function save(reset=false){if(reset&&!confirm("恢复这一组的主题默认值？其他设置不会改变。"))return;busy=true;error="";try{const result=await api("/theme-settings","PATCH",{revision:data.revision,groups:{[selected]:reset?null:value}});await load();message=result.build_status==="failed"?"设置已保存，但排队构建失败，请到概览重试。":"设置已保存，请到概览查看网站上线状态。";}catch(e){error=(e as Error).message;}finally{busy=false;}}
  async function showHistory(){try{history=(await api("/settings-history")).items.reverse();}catch(e){error=(e as Error).message;}}
  async function restore(revision:number){if(!confirm(`恢复外观与模块设置到版本 ${revision}？不会回退文章和私人数据。`))return;busy=true;try{await api(`/settings-history/${revision}/restore`,"POST",{revision:data.revision});await load();await showHistory();message="设置已恢复，等待网站重新上线。";}catch(e){error=(e as Error).message;}finally{busy=false;}}

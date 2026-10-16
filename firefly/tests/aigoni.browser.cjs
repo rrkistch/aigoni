@@ -134,12 +134,13 @@ const evidence=path.resolve(process.env.FIREFLY_TEST_EVIDENCE||"../.firefly/evid
   await app.getByText("设置已保存，请到概览查看网站上线状态。",{exact:true}).waitFor();
   for(const [label,width,dark] of [["desktop",1440,false],["mobile",390,true]]){
    await page.setViewportSize({width,height:1000});await page.evaluate(d=>document.documentElement.classList.toggle("dark",d),dark);
+   await page.evaluate(()=>window.scrollTo({top:0,behavior:"instant"}));await page.waitForTimeout(600);
    await page.screenshot({path:path.join(evidence,"theme-settings-"+label+".png")});
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),"settings overflow");
   }
   await app.getByRole("button",{name:"退出",exact:true}).click();
   await app.getByLabel("管理员密码").waitFor();assert.equal(authenticated,false);
   assert.deepEqual(errors,[]);
-  console.log("PASS public search, login, CSRF, create, conflict retention, Wiki, AI stream, responsive themes, logout");
+  console.log("PASS public search, login, CSRF, create, conflict retention, Wiki, AI stream, responsive themes, AI configuration, theme/music editing, logout");
  }catch(error){const current=browser.contexts()[0]?.pages()[0];if(current){fs.mkdirSync(evidence,{recursive:true});await current.screenshot({path:path.join(evidence,"browser-failure.png")});console.error((await current.locator(".aigoni").innerText()).slice(-5000));}throw error;}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(e=>{console.error(e);process.exit(1);});

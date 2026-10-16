@@ -11,9 +11,10 @@
  function move(index:number,delta:number){const next=[...(value||[])];[next[index],next[index+delta]]=[next[index+delta],next[index]];onchange(next);}
 </script>
 {#if schema.type==="object"}
- <div class="stack">{#each Object.entries(schema.properties||{}) as [key,field]}
+ <div class="stack">{#if path!=="config"}<h3>{schema.label}</h3>{/if}{#each Object.entries(schema.properties||{}) as [key,field]}
+ {#if !(field as any).visibleWhen || Object.entries((field as any).visibleWhen).every(([k,v])=>value?.[k]===v)}
   <ConfigFields schema={field} value={value?.[key]} onchange={(v)=>set(key,v)} path={path+"-"+key} />
- {/each}</div>
+ {/if}{/each}</div>
 {:else if schema.type==="array"}
  <fieldset class="stack config-array"><legend>{schema.label}</legend>
  {#each (value||[]) as entry,index}

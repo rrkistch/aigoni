@@ -675,6 +675,9 @@
             },
             "maxItems": 5
           }
+        },
+        "visibleWhen": {
+          "mode": "meting"
         }
       },
       "local": {
@@ -717,6 +720,9 @@
             },
             "maxItems": 200
           }
+        },
+        "visibleWhen": {
+          "mode": "local"
         }
       }
     }
@@ -1478,6 +1484,9 @@
             "type": "boolean",
             "label": "访问量"
           }
+        },
+        "visibleWhen": {
+          "type": "twikoo"
         }
       },
       "waline": {
@@ -1506,6 +1515,9 @@
             "type": "boolean",
             "label": "访问量"
           }
+        },
+        "visibleWhen": {
+          "type": "waline"
         }
       },
       "artalk": {
@@ -1525,6 +1537,9 @@
             "type": "boolean",
             "label": "访问量"
           }
+        },
+        "visibleWhen": {
+          "type": "artalk"
         }
       },
       "giscus": {
@@ -1563,6 +1578,9 @@
             "type": "string",
             "label": "语言"
           }
+        },
+        "visibleWhen": {
+          "type": "giscus"
         }
       },
       "disqus": {
@@ -1573,6 +1591,9 @@
             "type": "string",
             "label": "站点短名称"
           }
+        },
+        "visibleWhen": {
+          "type": "disqus"
         }
       }
     }

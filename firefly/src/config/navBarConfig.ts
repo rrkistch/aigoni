@@ -247,3 +247,12 @@ export const LinkPresets: Record<string, NavBarLink> = {
 export const navBarConfig: NavBarConfig = getDynamicNavBarConfig();
 
 applyThemeGroup("navigation", navBarConfig);
+
+// Custom navigation entries keep the original page-toggle association, even when moved between menus.
+const pageRoutes:Record<string,NonNullable<NavBarLink["pageKey"]>>={
+ "/friends":"friends","/guestbook":"guestbook","/dynamic":"dynamic","/projects":"projects","/gallery":"gallery","/booknav":"booknav","/bilibili":"bilibili","/bangumi":"bangumi","/vndb":"vndb","/myanimelist":"mal","/sponsor":"sponsor"
+};
+function bindPageToggles(links:NavBarLink[]):void{
+ for(const item of links){const key=pageRoutes[item.url.replace(/\/$/,"")];if(key)item.pageKey=key;if(item.children)bindPageToggles(item.children);}
+}
+bindPageToggles(navBarConfig.links);

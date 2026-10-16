@@ -5,7 +5,9 @@ export const themeDefaults:Record<string,unknown>={};
 function merge(base:any,patch:any):any{
  if(Array.isArray(patch))return patch.map((item)=>{
   if(item&&typeof item==="object"&&!Array.isArray(item)){
-   const original=Array.isArray(base)?(item.type?base.find(v=>v.type===item.type):undefined):undefined;
+      const original=Array.isArray(base)?base.find(v=>
+    item.type ? v.type===item.type : item.url ? v.url===item.url : item.id ? v.id===item.id : false
+   ):undefined;
    return merge(original||{},item);
   }
   return item;
