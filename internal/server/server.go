@@ -14,6 +14,7 @@ import (
 )
 
 type Server struct {
+	siteBuild       *siteBuilder
 	cfg             *config.Config
 	env             *config.Env
 	repo            *content.Repository
@@ -63,6 +64,9 @@ func NewWithFrontendFS(root string, cfg *config.Config, env *config.Env, webFron
 		remoteImageClient:   remoteImageHTTPClient,
 		remoteImageValidate: true,
 		wikiAskLimiter:      newRPMLimiter(),
+	}
+	if env.FrontendMode == "firefly" {
+		s.siteBuild = newSiteBuilder(s)
 	}
 	return s
 }

@@ -57,6 +57,7 @@ func main() {
 	defer cancelCleanup()
 	srv.StartWikiAgentCleanup()
 	srv.StartDraftCleanup(cleanupCtx)
+	srv.StartSiteBuild(cleanupCtx)
 
 	// 显式 http.Server 设置基础超时，避免慢连接长期占住连接。
 	// WriteTimeout 保持 0：Wiki Chat 的 SSE 长连接运行上限为 10 分钟，

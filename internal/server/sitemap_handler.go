@@ -13,6 +13,12 @@ import (
 // sitemap 输出 sitemap.xml：首页、列表页（全部篇章/分类/标签/归档），
 // 以及全部已发布文章与独立页面，供搜索引擎抓取收录。
 func (s *Server) sitemap(w http.ResponseWriter, r *http.Request) {
+	if s.siteBuild != nil {
+		r2 := r.Clone(r.Context())
+		r2.URL.Path = "/sitemap-index.xml"
+		s.serveFirefly(w, r2, false)
+		return
+	}
 	base := strings.TrimRight(s.cfg.Site.BaseURL, "/")
 
 	var urls []sitemapURL

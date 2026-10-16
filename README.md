@@ -245,3 +245,6 @@ Aigoni 使用 [MIT License](./LICENSE) 发布。
 ## 联系作者
 
 请使用中文沟通即可 `chinasiro@gmail.com`
+## Firefly 原版主题整合
+
+可选的 Firefly 模式保留原主题，接入公开内容静态发布和个人知识工作区。默认仍使用原 aigoni 前端。安装、构建状态和回退方法见 [整合说明](docs/firefly-integration.md)。

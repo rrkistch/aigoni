@@ -21,10 +21,18 @@ import (
 const defaultFrontendArticleImage = "/uploads/site/logo.png"
 
 func (s *Server) webFrontend(w http.ResponseWriter, r *http.Request) {
+	if s.siteBuild != nil && !strings.HasPrefix(r.URL.Path, "/_app/web/") {
+		s.serveFirefly(w, r, false)
+		return
+	}
 	s.serveSPA(w, r, s.env.WebFrontendDir, s.webFrontendFS, "/_app/web/")
 }
 
 func (s *Server) adminFrontend(w http.ResponseWriter, r *http.Request) {
+	if s.siteBuild != nil && !strings.HasPrefix(r.URL.Path, "/_app/admin/") && s.env.AdminFrontendDir == "" && s.siteBuild.hasActive() {
+		s.serveFirefly(w, r, true)
+		return
+	}
 	s.serveAdminSPA(w, r, s.env.AdminFrontendDir, s.adminFrontendFS)
 }
 

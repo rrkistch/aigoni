@@ -31,6 +31,11 @@ func (s *Server) upload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) robots(w http.ResponseWriter, r *http.Request) {
+	if s.siteBuild != nil {
+		s.serveFirefly(w, r, false)
+		return
+	}
+
 	if strings.Contains(r.URL.Path, "..") {
 		http.NotFound(w, r)
 		return
@@ -39,6 +44,11 @@ func (s *Server) robots(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) asset(w http.ResponseWriter, r *http.Request) {
+	if s.siteBuild != nil && !strings.Contains(r.URL.Path, ".assets/") {
+		s.serveFirefly(w, r, false)
+		return
+	}
+
 	if strings.Contains(r.URL.Path, "..") || strings.HasSuffix(r.URL.Path, ".md") {
 		http.NotFound(w, r)
 		return
@@ -53,5 +63,10 @@ func (s *Server) asset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	full := filepath.Join(config.Abs(s.root, s.cfg.Paths.ContentDir), filepath.FromSlash(path))
+	notes := config.Abs(s.root, s.cfg.Paths.NotesDir)
+	if rel, err := filepath.Rel(notes, full); err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && !s.auth.Authenticated(r) {
+		http.NotFound(w, r)
+		return
+	}
 	serveStaticFile(w, r, full)
 }

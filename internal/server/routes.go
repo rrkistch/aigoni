@@ -40,5 +40,8 @@ func (s *Server) Handler() http.Handler {
 
 	mux.HandleFunc("GET /", s.webFrontend)
 
+	if s.siteBuild != nil {
+		return s.siteBuildMiddleware(mux)
+	}
 	return mux
 }

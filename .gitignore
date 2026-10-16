@@ -16,3 +16,8 @@ config.yaml
 # 其余杂项
 *.log
 .DS_Store
+# Integration runtime
+/.firefly/
+/.tools/
+/firefly/.aigoni/
+/.pnpm-store/

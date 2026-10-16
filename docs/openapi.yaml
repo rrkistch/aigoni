@@ -559,6 +559,32 @@ paths:
           content:
             application/json:
               schema: {type: object, properties: {removed: {type: integer}, message: {type: string}}}
+  /api/admin/v1/site-build:
+    get:
+      tags: [Admin API]
+      summary: Read static site build status
+      security: [{AdminSession: []}]
+      responses:
+        '200':
+          description: Build status (disabled in legacy SPA mode)
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SiteBuildStatus'}
+        '401': {$ref: '#/components/responses/Error'}
+    post:
+      tags: [Admin API]
+      summary: Queue a static site build or retry
+      security: [{AdminSession: [], CSRFToken: []}]
+      responses:
+        '202':
+          description: Queued
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SiteBuildStatus'}
+        '200': {description: Firefly mode disabled}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '503': {$ref: '#/components/responses/Error'}
 components:
   securitySchemes:
     AdminSession:
@@ -722,6 +748,18 @@ components:
       responses:
         '200': {description: Deleted, content: {application/json: {schema: {type: object, properties: {kind: {type: string}, deleted: {type: boolean}}}}}}
   schemas:
+    SiteBuildStatus:
+      type: object
+      required: [enabled, status, revision, published_revision, blocked, updated_at]
+      properties:
+        enabled: {type: boolean}
+        status: {type: string, enum: [disabled, idle, queued, building, published, failed]}
+        revision: {type: integer}
+        published_revision: {type: integer}
+        active: {type: string, description: Opaque release identifier, not a filesystem path}
+        blocked: {type: boolean, description: Previous public content withheld pending safe rebuild}
+        error: {type: string}
+        updated_at: {type: string, format: date-time}
     APIIndex: {type: object, required: [version, endpoints], properties: {version: {type: string, example: v1}, endpoints: {type: array, items: {type: string}}}}
     PublicContent:
       type: object

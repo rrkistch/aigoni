@@ -16,6 +16,8 @@ func (s *Server) registerAdminAPIRoutes(mux *http.ServeMux) {
 		mux.Handle(pattern, s.requireAdminAPIAuth(handler))
 	}
 	auth("GET "+adminAPIBasePath+"/dashboard", s.adminAPIDashboard)
+	auth("GET "+adminAPIBasePath+"/site-build", s.siteBuildAPI)
+	auth("POST "+adminAPIBasePath+"/site-build", s.siteBuildAPI)
 	auth("GET "+adminAPIBasePath+"/settings", s.settingsAPI)
 	auth("PATCH "+adminAPIBasePath+"/settings", s.settingsAPI)
 	auth("PUT "+adminAPIBasePath+"/settings/assets/{kind}", s.settingsAssetsAPI)

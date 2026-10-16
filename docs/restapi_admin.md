@@ -797,3 +797,17 @@
 |---|---|---|---|---|
 | `removed` | DELETE | 不可空 | `3` | 已删除的 Wiki 备份目录数量。 |
 | `message` | DELETE | 不可空 | `"已清理 3 个 Wiki 备份目录。"` | 操作提示。 |
+
+## GET /api/admin/v1/site-build
+
+需要管理员 Session。返回 enabled、status、revision、published_revision、blocked、updated_at；可选 active（版本标识，不是磁盘路径）和 error。状态为 disabled、idle、queued、building、published 或 failed。响应禁止缓存。未启用 Firefly 时返回 enabled=false、status=disabled。
+
+## POST /api/admin/v1/site-build
+
+需要管理员 Session 与 X-CSRF-Token，不接收构建命令或磁盘路径。排队新构建或重试失败构建，返回 202 和相同状态结构；未启用 Firefly 时返回 200 disabled。公开快照读取或状态持久化失败返回 503。
+
+内容保存成功不等于静态站点已上线。公开数据变更自动排队；私人笔记不会触发公开构建。撤回导致旧站点暂时停供时 blocked=true，管理 API 与工作区保持可用。
+
+### 私人附件
+
+位于配置的 notes_dir 下的附件与私人笔记一样要求管理员 Session。匿名读取返回 404；公开文章资源及原上传白名单行为保持不变。

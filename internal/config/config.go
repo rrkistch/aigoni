@@ -47,10 +47,14 @@ type PathsConfig struct {
 }
 
 type Env struct {
-	AdminPassword string
-	AigoniAPIKey  string
-	Port          int
-	AdminPath     string
+	FrontendMode     string
+	FireflySourceDir string
+	FireflyBuildDir  string
+	FireflyNode      string
+	AdminPassword    string
+	AigoniAPIKey     string
+	Port             int
+	AdminPath        string
 	// CookieSecure 为 true 时后台会话 Cookie 会带上 Secure 标记，仅用于 HTTPS 部署。
 	CookieSecure bool
 	// WebFrontendDir and AdminFrontendDir override embedded SPA builds when set.
@@ -111,6 +115,7 @@ func LoadEnv(path string) (*Env, error) {
 		return nil, err
 	}
 	keys := []string{
+		"FRONTEND_MODE", "FIREFLY_SOURCE_DIR", "FIREFLY_BUILD_DIR", "FIREFLY_NODE",
 		"ADMIN_PASSWORD",
 		"AIGONI_API_KEY",
 		"PORT",
@@ -173,6 +178,10 @@ func LoadEnv(path string) (*Env, error) {
 	webFrontendDir := strings.TrimSpace(values["WEB_FRONTEND_DIR"])
 	adminFrontendDir := strings.TrimSpace(values["ADMIN_FRONTEND_DIR"])
 	env := &Env{
+		FrontendMode:           strings.TrimSpace(values["FRONTEND_MODE"]),
+		FireflySourceDir:       strings.TrimSpace(values["FIREFLY_SOURCE_DIR"]),
+		FireflyBuildDir:        strings.TrimSpace(values["FIREFLY_BUILD_DIR"]),
+		FireflyNode:            strings.TrimSpace(values["FIREFLY_NODE"]),
 		AdminPassword:          values["ADMIN_PASSWORD"],
 		AigoniAPIKey:           values["AIGONI_API_KEY"],
 		Port:                   port,
@@ -189,6 +198,18 @@ func LoadEnv(path string) (*Env, error) {
 		WikiAskAPIEnabled:      wikiAskAPIEnabled,
 		WikiAskAPIRPM:          wikiAskAPIRPM,
 		WikiAgentConcurrency:   wikiAgentConcurrency,
+	}
+	if env.FrontendMode != "" && env.FrontendMode != "spa" && env.FrontendMode != "firefly" {
+		return nil, errors.New("FRONTEND_MODE must be spa or firefly")
+	}
+	if env.FireflySourceDir == "" {
+		env.FireflySourceDir = "firefly"
+	}
+	if env.FireflyBuildDir == "" {
+		env.FireflyBuildDir = ".firefly"
+	}
+	if env.FireflyNode == "" {
+		env.FireflyNode = "node"
 	}
 	if env.AdminPassword == "" {
 		return nil, errors.New("ADMIN_PASSWORD is required")
