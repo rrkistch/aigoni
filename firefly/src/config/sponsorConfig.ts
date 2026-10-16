@@ -1,3 +1,4 @@
+import { applyThemeGroup } from "./aigoni-theme";
 import type { SponsorConfig } from "../types/sponsorConfig";
 
 export const sponsorConfig: SponsorConfig = {
@@ -77,3 +78,5 @@ export const sponsorConfig: SponsorConfig = {
 		},
 	],
 };
+
+applyThemeGroup("sponsor", sponsorConfig);

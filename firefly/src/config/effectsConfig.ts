@@ -1,3 +1,4 @@
+import { applyThemeGroup } from "./aigoni-theme";
 import type { SakuraConfig } from "../types/effectsConfig";
 
 // 特效配置 - 集中管理所有动画特效
@@ -53,3 +54,5 @@ export const sakuraConfig: SakuraConfig = {
 	// 层级，确保樱花在合适的层级显示
 	zIndex: 100,
 };
+
+applyThemeGroup("effects", sakuraConfig);

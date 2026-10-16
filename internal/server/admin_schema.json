@@ -1,0 +1,1743 @@
+{
+  "wallpaper": {
+    "type": "object",
+    "label": "壁纸与横幅",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "label": "模式",
+        "enum": [
+          "banner",
+          "fullscreen",
+          "overlay",
+          "none"
+        ]
+      },
+      "src": {
+        "type": "object",
+        "label": "素材",
+        "properties": {
+          "desktop": {
+            "type": "array",
+            "label": "桌面图片",
+            "items": {
+              "type": "string",
+              "label": "图片地址",
+              "format": "url",
+              "mediaKind": "image"
+            },
+            "maxItems": 20
+          },
+          "mobile": {
+            "type": "array",
+            "label": "手机图片",
+            "items": {
+              "type": "string",
+              "label": "图片地址",
+              "format": "url",
+              "mediaKind": "image"
+            },
+            "maxItems": 20
+          },
+          "playerUrl": {
+            "type": "string",
+            "label": "背景视频地址",
+            "format": "url"
+          }
+        }
+      },
+      "playerEnable": {
+        "type": "boolean",
+        "label": "背景视频"
+      },
+      "common": {
+        "type": "object",
+        "label": "横幅",
+        "properties": {
+          "dimOpacity": {
+            "type": "number",
+            "label": "遮罩暗度",
+            "min": 0,
+            "max": 1
+          },
+          "homeText": {
+            "type": "object",
+            "label": "文字",
+            "properties": {
+              "enable": {
+                "type": "boolean",
+                "label": "显示"
+              },
+              "title": {
+                "type": "string",
+                "label": "标题"
+              },
+              "subtitle": {
+                "type": "array",
+                "label": "副标题",
+                "items": {
+                  "type": "string",
+                  "label": "文字"
+                },
+                "maxItems": 20
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "appearance": {
+    "type": "object",
+    "label": "配色与布局",
+    "properties": {
+      "themeColor": {
+        "type": "object",
+        "label": "配色",
+        "properties": {
+          "hue": {
+            "type": "number",
+            "label": "色相",
+            "min": 0,
+            "max": 360
+          },
+          "defaultMode": {
+            "type": "string",
+            "label": "明暗模式",
+            "enum": [
+              "system",
+              "light",
+              "dark"
+            ]
+          }
+        }
+      },
+      "pageWidth": {
+        "type": "number",
+        "label": "宽度 rem",
+        "min": 40,
+        "max": 140
+      },
+      "card": {
+        "type": "object",
+        "label": "卡片",
+        "properties": {
+          "border": {
+            "type": "boolean",
+            "label": "边框和阴影"
+          },
+          "followTheme": {
+            "type": "boolean",
+            "label": "跟随主题色"
+          }
+        }
+      },
+      "categoryBar": {
+        "type": "boolean",
+        "label": "分类导航条"
+      },
+      "siteStartDate": {
+        "type": "string",
+        "label": "建站日期"
+      },
+      "lang": {
+        "type": "string",
+        "label": "语言",
+        "enum": [
+          "zh_CN",
+          "zh_TW",
+          "en",
+          "ja",
+          "ru",
+          "ko"
+        ]
+      },
+      "favicon": {
+        "items": {
+          "properties": {
+            "src": {
+              "mediaKind": "image",
+              "format": "url",
+              "label": "图片",
+              "type": "string"
+            },
+            "sizes": {
+              "type": "string",
+              "label": "尺寸（如 32x32）"
+            },
+            "theme": {
+              "enum": [
+                "light",
+                "dark"
+              ],
+              "label": "明暗模式",
+              "type": "string"
+            }
+          },
+          "label": "图标",
+          "type": "object"
+        },
+        "maxItems": 4,
+        "label": "浏览器图标",
+        "type": "array"
+      }
+    }
+  },
+  "pages": {
+    "type": "object",
+    "label": "页面开关",
+    "properties": {
+      "friends": {
+        "type": "boolean",
+        "label": "友链"
+      },
+      "guestbook": {
+        "type": "boolean",
+        "label": "留言板"
+      },
+      "dynamic": {
+        "type": "boolean",
+        "label": "动态"
+      },
+      "projects": {
+        "type": "boolean",
+        "label": "项目"
+      },
+      "gallery": {
+        "type": "boolean",
+        "label": "相册"
+      },
+      "booknav": {
+        "type": "boolean",
+        "label": "公开书签"
+      },
+      "bilibili": {
+        "type": "boolean",
+        "label": "Bilibili"
+      },
+      "bangumi": {
+        "type": "boolean",
+        "label": "Bangumi"
+      },
+      "vndb": {
+        "type": "boolean",
+        "label": "VNDB"
+      },
+      "mal": {
+        "type": "boolean",
+        "label": "MyAnimeList"
+      },
+      "sponsor": {
+        "type": "boolean",
+        "label": "打赏"
+      }
+    }
+  },
+  "navigation": {
+    "type": "object",
+    "label": "顶部导航",
+    "properties": {
+      "links": {
+        "type": "array",
+        "label": "导航项",
+        "items": {
+          "type": "object",
+          "label": "链接",
+          "properties": {
+            "name": {
+              "type": "string",
+              "label": "名称"
+            },
+            "url": {
+              "type": "string",
+              "label": "地址",
+              "format": "url"
+            },
+            "icon": {
+              "type": "string",
+              "label": "图标",
+              "enum": [
+                "",
+                "material-symbols:home",
+                "material-symbols:article",
+                "material-symbols:link",
+                "material-symbols:person",
+                "material-symbols:bookmarks",
+                "material-symbols:photo-library",
+                "material-symbols:music-note",
+                "material-symbols:favorite",
+                "material-symbols:code",
+                "fa7-brands:github",
+                "fa7-brands:bilibili",
+                "material-symbols:group",
+                "material-symbols:info"
+              ]
+            },
+            "external": {
+              "type": "boolean",
+              "label": "新窗口打开"
+            },
+            "children": {
+              "type": "array",
+              "label": "子菜单",
+              "items": {
+                "type": "object",
+                "label": "链接",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "label": "名称"
+                  },
+                  "url": {
+                    "type": "string",
+                    "label": "地址",
+                    "format": "url"
+                  },
+                  "icon": {
+                    "type": "string",
+                    "label": "图标",
+                    "enum": [
+                      "",
+                      "material-symbols:home",
+                      "material-symbols:article",
+                      "material-symbols:link",
+                      "material-symbols:person",
+                      "material-symbols:bookmarks",
+                      "material-symbols:photo-library",
+                      "material-symbols:music-note",
+                      "material-symbols:favorite",
+                      "material-symbols:code",
+                      "fa7-brands:github",
+                      "fa7-brands:bilibili",
+                      "material-symbols:archive",
+                      "material-symbols:folder-open-rounded",
+                      "material-symbols:tag-rounded",
+                      "material-symbols:layers",
+                      "material-symbols:link-2-rounded",
+                      "material-symbols:chat",
+                      "material-symbols:forum-rounded",
+                      "material-symbols:rocket-launch",
+                      "material-symbols:movie",
+                      "material-symbols:chrome-reader-mode-rounded",
+                      "material-symbols:menu-book",
+                      "fa7-brands:gitee",
+                      "material-symbols:docs"
+                    ]
+                  },
+                  "external": {
+                    "type": "boolean",
+                    "label": "新窗口打开"
+                  }
+                }
+              },
+              "maxItems": 20
+            }
+          }
+        },
+        "maxItems": 30
+      }
+    }
+  },
+  "sidebar": {
+    "type": "object",
+    "label": "侧边栏",
+    "properties": {
+      "enable": {
+        "type": "boolean",
+        "label": "启用"
+      },
+      "position": {
+        "type": "string",
+        "label": "布局",
+        "enum": [
+          "left",
+          "right",
+          "both"
+        ]
+      },
+      "tabletSidebar": {
+        "type": "string",
+        "label": "平板侧栏",
+        "enum": [
+          "left",
+          "right"
+        ]
+      },
+      "hideSidebarOnPostPage": {
+        "type": "boolean",
+        "label": "文章页隐藏"
+      },
+      "leftComponents": {
+        "type": "array",
+        "label": "左侧",
+        "items": {
+          "type": "object",
+          "label": "组件",
+          "properties": {
+            "type": {
+              "type": "string",
+              "label": "类型",
+              "enum": [
+                "profile",
+                "announcement",
+                "music",
+                "categories",
+                "tags",
+                "dynamic",
+                "stats",
+                "siteInfo",
+                "calendar",
+                "sidebarToc",
+                "advertisement"
+              ]
+            },
+            "enable": {
+              "type": "boolean",
+              "label": "显示"
+            },
+            "showTitle": {
+              "type": "boolean",
+              "label": "显示标题"
+            },
+            "position": {
+              "type": "string",
+              "label": "定位",
+              "enum": [
+                "top",
+                "sticky"
+              ]
+            },
+            "showOnPostPage": {
+              "type": "boolean",
+              "label": "文章页显示"
+            },
+            "hideOnNonPostPage": {
+              "type": "boolean",
+              "label": "仅文章页显示"
+            },
+            "specificConfig": {
+              "type": "object",
+              "label": "组件设置",
+              "properties": {
+                "collapseThreshold": {
+                  "type": "number",
+                  "label": "折叠阈值",
+                  "min": 0,
+                  "max": 100
+                },
+                "calendar": {
+                  "type": "object",
+                  "label": "日历",
+                  "properties": {
+                    "showHeatmap": {
+                      "type": "boolean",
+                      "label": "年度热力图"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "maxItems": 20
+      },
+      "rightComponents": {
+        "type": "array",
+        "label": "右侧",
+        "items": {
+          "type": "object",
+          "label": "组件",
+          "properties": {
+            "type": {
+              "type": "string",
+              "label": "类型",
+              "enum": [
+                "profile",
+                "announcement",
+                "music",
+                "categories",
+                "tags",
+                "dynamic",
+                "stats",
+                "siteInfo",
+                "calendar",
+                "sidebarToc",
+                "advertisement"
+              ]
+            },
+            "enable": {
+              "type": "boolean",
+              "label": "显示"
+            },
+            "showTitle": {
+              "type": "boolean",
+              "label": "显示标题"
+            },
+            "position": {
+              "type": "string",
+              "label": "定位",
+              "enum": [
+                "top",
+                "sticky"
+              ]
+            },
+            "showOnPostPage": {
+              "type": "boolean",
+              "label": "文章页显示"
+            },
+            "hideOnNonPostPage": {
+              "type": "boolean",
+              "label": "仅文章页显示"
+            },
+            "specificConfig": {
+              "type": "object",
+              "label": "组件设置",
+              "properties": {
+                "collapseThreshold": {
+                  "type": "number",
+                  "label": "折叠阈值",
+                  "min": 0,
+                  "max": 100
+                },
+                "calendar": {
+                  "type": "object",
+                  "label": "日历",
+                  "properties": {
+                    "showHeatmap": {
+                      "type": "boolean",
+                      "label": "年度热力图"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "maxItems": 20
+      },
+      "mobileBottomComponents": {
+        "type": "array",
+        "label": "手机底部",
+        "items": {
+          "type": "object",
+          "label": "组件",
+          "properties": {
+            "type": {
+              "type": "string",
+              "label": "类型",
+              "enum": [
+                "profile",
+                "announcement",
+                "music",
+                "categories",
+                "tags",
+                "dynamic",
+                "stats",
+                "siteInfo",
+                "calendar",
+                "sidebarToc",
+                "advertisement"
+              ]
+            },
+            "enable": {
+              "type": "boolean",
+              "label": "显示"
+            },
+            "showTitle": {
+              "type": "boolean",
+              "label": "显示标题"
+            },
+            "position": {
+              "type": "string",
+              "label": "定位",
+              "enum": [
+                "top",
+                "sticky"
+              ]
+            },
+            "showOnPostPage": {
+              "type": "boolean",
+              "label": "文章页显示"
+            },
+            "hideOnNonPostPage": {
+              "type": "boolean",
+              "label": "仅文章页显示"
+            },
+            "specificConfig": {
+              "type": "object",
+              "label": "组件设置",
+              "properties": {
+                "collapseThreshold": {
+                  "type": "number",
+                  "label": "折叠阈值",
+                  "min": 0,
+                  "max": 100
+                },
+                "calendar": {
+                  "type": "object",
+                  "label": "日历",
+                  "properties": {
+                    "showHeatmap": {
+                      "type": "boolean",
+                      "label": "年度热力图"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "maxItems": 20
+      }
+    }
+  },
+  "music": {
+    "type": "object",
+    "label": "音乐",
+    "properties": {
+      "showInNavbar": {
+        "type": "boolean",
+        "label": "导航入口"
+      },
+      "showInSidebar": {
+        "type": "boolean",
+        "label": "侧栏入口"
+      },
+      "mode": {
+        "type": "string",
+        "label": "来源",
+        "enum": [
+          "local",
+          "meting"
+        ]
+      },
+      "volume": {
+        "type": "number",
+        "label": "音量",
+        "min": 0,
+        "max": 1
+      },
+      "playMode": {
+        "type": "string",
+        "label": "循环",
+        "enum": [
+          "list",
+          "one",
+          "random"
+        ]
+      },
+      "showLyrics": {
+        "type": "boolean",
+        "label": "歌词"
+      },
+      "meting": {
+        "type": "object",
+        "label": "外部歌单",
+        "properties": {
+          "api": {
+            "type": "string",
+            "label": "接口模板",
+            "format": "url"
+          },
+          "server": {
+            "type": "string",
+            "label": "平台",
+            "enum": [
+              "netease",
+              "tencent",
+              "kugou",
+              "xiami",
+              "baidu"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "label": "类型",
+            "enum": [
+              "song",
+              "playlist",
+              "album",
+              "search",
+              "artist"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "label": "歌单 ID"
+          },
+          "fallbackApis": {
+            "type": "array",
+            "label": "备用接口",
+            "items": {
+              "type": "string",
+              "label": "地址",
+              "format": "url"
+            },
+            "maxItems": 5
+          }
+        }
+      },
+      "local": {
+        "type": "object",
+        "label": "本地",
+        "properties": {
+          "playlist": {
+            "type": "array",
+            "label": "歌曲",
+            "items": {
+              "type": "object",
+              "label": "歌曲",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "label": "歌名"
+                },
+                "artist": {
+                  "type": "string",
+                  "label": "歌手"
+                },
+                "url": {
+                  "type": "string",
+                  "label": "音频",
+                  "format": "url",
+                  "mediaKind": "audio"
+                },
+                "cover": {
+                  "type": "string",
+                  "label": "封面",
+                  "format": "url",
+                  "mediaKind": "image"
+                },
+                "lrc": {
+                  "type": "string",
+                  "label": "歌词文本或地址",
+                  "mediaKind": "lyrics"
+                }
+              }
+            },
+            "maxItems": 200
+          }
+        }
+      }
+    }
+  },
+  "announcement": {
+    "type": "object",
+    "label": "公告",
+    "properties": {
+      "title": {
+        "type": "string",
+        "label": "标题"
+      },
+      "content": {
+        "type": "string",
+        "label": "内容",
+        "multiline": true
+      },
+      "closable": {
+        "type": "boolean",
+        "label": "允许关闭"
+      },
+      "link": {
+        "type": "object",
+        "label": "链接",
+        "properties": {
+          "enable": {
+            "type": "boolean",
+            "label": "启用"
+          },
+          "text": {
+            "type": "string",
+            "label": "文字"
+          },
+          "url": {
+            "type": "string",
+            "label": "地址",
+            "format": "url"
+          },
+          "external": {
+            "type": "boolean",
+            "label": "新窗口打开"
+          }
+        }
+      }
+    }
+  },
+  "friends": {
+    "type": "array",
+    "label": "友链",
+    "items": {
+      "type": "object",
+      "label": "友链",
+      "properties": {
+        "title": {
+          "type": "string",
+          "label": "名称"
+        },
+        "imgurl": {
+          "type": "string",
+          "label": "头像",
+          "format": "url",
+          "mediaKind": "image"
+        },
+        "desc": {
+          "type": "string",
+          "label": "说明"
+        },
+        "siteurl": {
+          "type": "string",
+          "label": "地址",
+          "format": "url"
+        },
+        "tags": {
+          "type": "array",
+          "label": "标签",
+          "items": {
+            "type": "string",
+            "label": "标签"
+          },
+          "maxItems": 10
+        },
+        "weight": {
+          "type": "number",
+          "label": "权重",
+          "min": -10000,
+          "max": 10000
+        },
+        "enabled": {
+          "type": "boolean",
+          "label": "显示"
+        }
+      }
+    },
+    "maxItems": 200
+  },
+  "booknav": {
+    "type": "array",
+    "label": "公开书签",
+    "items": {
+      "type": "object",
+      "label": "分组",
+      "properties": {
+        "id": {
+          "type": "string",
+          "label": "标识"
+        },
+        "name": {
+          "type": "string",
+          "label": "名称"
+        },
+        "icon": {
+          "type": "string",
+          "label": "图标",
+          "enum": [
+            "",
+            "material-symbols:home",
+            "material-symbols:article",
+            "material-symbols:link",
+            "material-symbols:person",
+            "material-symbols:bookmarks",
+            "material-symbols:photo-library",
+            "material-symbols:music-note",
+            "material-symbols:favorite",
+            "material-symbols:code",
+            "fa7-brands:github",
+            "fa7-brands:bilibili",
+            "material-symbols:code-rounded",
+            "material-symbols:palette-outline-rounded",
+            "material-symbols:build-outline-rounded",
+            "material-symbols:auto-stories-outline-rounded"
+          ]
+        },
+        "desc": {
+          "type": "string",
+          "label": "说明"
+        },
+        "weight": {
+          "type": "number",
+          "label": "权重",
+          "min": -10000,
+          "max": 10000
+        },
+        "items": {
+          "type": "array",
+          "label": "网站",
+          "items": {
+            "type": "object",
+            "label": "书签",
+            "properties": {
+              "title": {
+                "type": "string",
+                "label": "名称"
+              },
+              "url": {
+                "type": "string",
+                "label": "地址",
+                "format": "url"
+              },
+              "desc": {
+                "type": "string",
+                "label": "说明"
+              },
+              "icon": {
+                "type": "string",
+                "label": "图标或图片"
+              }
+            }
+          },
+          "maxItems": 200
+        }
+      }
+    },
+    "maxItems": 50
+  },
+  "reading": {
+    "type": "object",
+    "label": "阅读",
+    "properties": {
+      "showLastModified": {
+        "type": "boolean",
+        "label": "更新时间"
+      },
+      "outdatedThreshold": {
+        "type": "number",
+        "label": "提醒天数",
+        "min": 0,
+        "max": 3650
+      },
+      "share": {
+        "type": "boolean",
+        "label": "分享"
+      },
+      "postNavigation": {
+        "type": "boolean",
+        "label": "前后篇"
+      },
+      "relatedPosts": {
+        "type": "boolean",
+        "label": "相关文章"
+      },
+      "randomPosts": {
+        "type": "boolean",
+        "label": "随机推荐"
+      },
+      "immersiveReading": {
+        "type": "object",
+        "label": "沉浸阅读",
+        "properties": {
+          "enable": {
+            "type": "boolean",
+            "label": "启用"
+          },
+          "defaultOn": {
+            "type": "boolean",
+            "label": "默认进入"
+          },
+          "tocEnabled": {
+            "type": "boolean",
+            "label": "目录"
+          },
+          "tocPosition": {
+            "type": "string",
+            "label": "目录位置",
+            "enum": [
+              "left",
+              "right"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "cover": {
+    "type": "object",
+    "label": "封面",
+    "properties": {
+      "enableInPost": {
+        "type": "boolean",
+        "label": "正文页显示"
+      },
+      "enableInPostOverlay": {
+        "type": "boolean",
+        "label": "标题叠加"
+      },
+      "showLoading": {
+        "type": "boolean",
+        "label": "加载动画"
+      },
+      "randomCoverImage": {
+        "type": "object",
+        "label": "随机封面",
+        "properties": {
+          "enable": {
+            "type": "boolean",
+            "label": "启用"
+          },
+          "apis": {
+            "type": "array",
+            "label": "接口",
+            "items": {
+              "type": "string",
+              "label": "地址",
+              "format": "url"
+            },
+            "maxItems": 10
+          },
+          "fallback": {
+            "type": "string",
+            "label": "备用图片",
+            "format": "url",
+            "mediaKind": "image"
+          }
+        }
+      }
+    }
+  },
+  "effects": {
+    "type": "object",
+    "label": "樱花",
+    "properties": {
+      "enable": {
+        "type": "boolean",
+        "label": "启用"
+      },
+      "sakuraNum": {
+        "type": "number",
+        "label": "数量",
+        "min": 0,
+        "max": 100
+      }
+    }
+  },
+  "fonts": {
+    "type": "object",
+    "label": "字体",
+    "properties": {
+      "enable": {
+        "type": "boolean",
+        "label": "启用"
+      },
+      "selected": {
+        "type": "array",
+        "label": "正文字体",
+        "items": {
+          "type": "string",
+          "label": "字体",
+          "enum": [
+            "system",
+            "--font-zen-maru-gothic",
+            "--font-inter",
+            "--font-jetbrains-mono",
+            "--font-greatvibes"
+          ]
+        },
+        "maxItems": 4
+      },
+      "bannerTitleFont": {
+        "type": "string",
+        "label": "横幅标题",
+        "enum": [
+          "",
+          "system",
+          "--font-zen-maru-gothic",
+          "--font-inter",
+          "--font-jetbrains-mono",
+          "--font-greatvibes"
+        ]
+      },
+      "bannerSubtitleFont": {
+        "type": "string",
+        "label": "横幅副标题",
+        "enum": [
+          "",
+          "system",
+          "--font-zen-maru-gothic",
+          "--font-inter",
+          "--font-jetbrains-mono",
+          "--font-greatvibes"
+        ]
+      },
+      "navbarTitleFont": {
+        "type": "string",
+        "label": "导航标题",
+        "enum": [
+          "",
+          "system",
+          "--font-zen-maru-gothic",
+          "--font-inter",
+          "--font-jetbrains-mono",
+          "--font-greatvibes"
+        ]
+      },
+      "codeFont": {
+        "type": "string",
+        "label": "代码字体",
+        "enum": [
+          "",
+          "system",
+          "--font-zen-maru-gothic",
+          "--font-inter",
+          "--font-jetbrains-mono",
+          "--font-greatvibes"
+        ]
+      }
+    }
+  },
+  "sponsor": {
+    "type": "object",
+    "label": "打赏展示",
+    "properties": {
+      "title": {
+        "type": "string",
+        "label": "标题"
+      },
+      "description": {
+        "type": "string",
+        "label": "说明"
+      },
+      "usage": {
+        "type": "string",
+        "label": "用途"
+      },
+      "methods": {
+        "type": "array",
+        "label": "打赏方式",
+        "items": {
+          "type": "object",
+          "label": "方式",
+          "properties": {
+            "name": {
+              "type": "string",
+              "label": "名称"
+            },
+            "qrCode": {
+              "type": "string",
+              "label": "二维码图片",
+              "format": "url",
+              "mediaKind": "image"
+            },
+            "link": {
+              "type": "string",
+              "label": "打赏链接",
+              "format": "url"
+            },
+            "description": {
+              "type": "string",
+              "label": "说明"
+            },
+            "enabled": {
+              "type": "boolean",
+              "label": "启用"
+            }
+          }
+        },
+        "maxItems": 20
+      },
+      "sponsors": {
+        "type": "array",
+        "label": "打赏者",
+        "items": {
+          "type": "object",
+          "label": "打赏者",
+          "properties": {
+            "name": {
+              "type": "string",
+              "label": "名称"
+            },
+            "avatar": {
+              "type": "string",
+              "label": "头像",
+              "format": "url",
+              "mediaKind": "image"
+            },
+            "amount": {
+              "type": "string",
+              "label": "金额说明"
+            },
+            "date": {
+              "type": "string",
+              "label": "日期"
+            }
+          }
+        },
+        "maxItems": 200
+      },
+      "showSponsorsList": {
+        "type": "boolean",
+        "label": "显示打赏者"
+      },
+      "showComment": {
+        "type": "boolean",
+        "label": "显示评论"
+      },
+      "showButtonInPost": {
+        "type": "boolean",
+        "label": "文章底部入口"
+      }
+    }
+  },
+  "display": {
+    "type": "object",
+    "label": "访客显示面板",
+    "properties": {
+      "enable": {
+        "type": "boolean",
+        "label": "启用面板"
+      },
+      "themeColorSwitchable": {
+        "type": "boolean",
+        "label": "主题色"
+      },
+      "layoutSwitchable": {
+        "type": "boolean",
+        "label": "文章布局"
+      },
+      "cardBorderSwitchable": {
+        "type": "boolean",
+        "label": "卡片边框"
+      },
+      "cardFollowThemeSwitchable": {
+        "type": "boolean",
+        "label": "卡片跟随配色"
+      },
+      "wallpaperModeSwitchable": {
+        "type": "boolean",
+        "label": "壁纸模式（增大构建体积）"
+      },
+      "fullscreenLayoutSwitchable": {
+        "type": "boolean",
+        "label": "全屏布局"
+      },
+      "wavesSwitchable": {
+        "type": "boolean",
+        "label": "水波纹"
+      },
+      "gradientSwitchable": {
+        "type": "boolean",
+        "label": "渐变"
+      },
+      "bannerTitleSwitchable": {
+        "type": "boolean",
+        "label": "横幅标题"
+      },
+      "bannerCarouselSwitchable": {
+        "type": "boolean",
+        "label": "轮播"
+      },
+      "sakuraSwitchable": {
+        "type": "boolean",
+        "label": "樱花"
+      }
+    }
+  },
+  "profile": {
+    "type": "object",
+    "label": "个人社交链接",
+    "properties": {
+      "links": {
+        "type": "array",
+        "label": "链接",
+        "items": {
+          "type": "object",
+          "label": "社交链接",
+          "properties": {
+            "name": {
+              "type": "string",
+              "label": "名称"
+            },
+            "url": {
+              "type": "string",
+              "label": "地址",
+              "format": "contact-url"
+            },
+            "icon": {
+              "type": "string",
+              "label": "图标名称"
+            },
+            "showName": {
+              "type": "boolean",
+              "label": "显示名称"
+            }
+          }
+        },
+        "maxItems": 30
+      }
+    }
+  },
+  "footer": {
+    "type": "object",
+    "label": "页脚",
+    "properties": {
+      "text": {
+        "type": "string",
+        "label": "说明"
+      },
+      "icpText": {
+        "type": "string",
+        "label": "备案信息"
+      },
+      "icpURL": {
+        "type": "string",
+        "label": "备案链接",
+        "format": "url"
+      },
+      "links": {
+        "type": "array",
+        "label": "其他链接",
+        "items": {
+          "type": "object",
+          "label": "链接",
+          "properties": {
+            "text": {
+              "type": "string",
+              "label": "文字"
+            },
+            "url": {
+              "type": "string",
+              "label": "地址",
+              "format": "url"
+            }
+          }
+        },
+        "maxItems": 20
+      }
+    }
+  },
+  "dynamic": {
+    "type": "object",
+    "label": "动态来源",
+    "properties": {
+      "title": {
+        "type": "string",
+        "label": "标题"
+      },
+      "description": {
+        "type": "string",
+        "label": "简介"
+      },
+      "profileUrl": {
+        "type": "string",
+        "label": "头像跳转",
+        "format": "url"
+      },
+      "showComment": {
+        "type": "boolean",
+        "label": "评论"
+      },
+      "itemsPerPage": {
+        "type": "number",
+        "label": "每页数量",
+        "min": 1,
+        "max": 100
+      },
+      "apiUrl": {
+        "type": "string",
+        "label": "动态 JSON 地址",
+        "format": "url"
+      },
+      "memos": {
+        "type": "object",
+        "label": "Memos",
+        "properties": {
+          "enable": {
+            "type": "boolean",
+            "label": "使用 Memos 代替本地动态"
+          },
+          "apiUrl": {
+            "type": "string",
+            "label": "实例地址",
+            "format": "url"
+          },
+          "parent": {
+            "type": "string",
+            "label": "用户标识"
+          }
+        }
+      }
+    }
+  },
+  "license": {
+    "type": "object",
+    "label": "文章许可",
+    "properties": {
+      "enable": {
+        "type": "boolean",
+        "label": "显示许可"
+      },
+      "name": {
+        "type": "string",
+        "label": "许可证名称"
+      },
+      "url": {
+        "type": "string",
+        "label": "许可证地址",
+        "format": "url"
+      }
+    }
+  },
+  "gallery": {
+    "type": "object",
+    "label": "公开相册",
+    "properties": {
+      "columnWidth": {
+        "type": "number",
+        "label": "最小列宽",
+        "min": 120,
+        "max": 600
+      },
+      "albums": {
+        "type": "array",
+        "label": "相册",
+        "items": {
+          "type": "object",
+          "label": "相册",
+          "properties": {
+            "id": {
+              "type": "string",
+              "label": "相册标识",
+              "format": "slug"
+            },
+            "name": {
+              "type": "string",
+              "label": "名称"
+            },
+            "description": {
+              "type": "string",
+              "label": "简介"
+            },
+            "date": {
+              "type": "string",
+              "label": "日期"
+            },
+            "location": {
+              "type": "string",
+              "label": "地点"
+            },
+            "tags": {
+              "type": "array",
+              "label": "标签",
+              "items": {
+                "type": "string",
+                "label": "标签"
+              },
+              "maxItems": 20
+            },
+            "cover": {
+              "type": "string",
+              "label": "封面",
+              "format": "url",
+              "mediaKind": "image"
+            },
+            "photos": {
+              "type": "array",
+              "label": "图片",
+              "items": {
+                "type": "string",
+                "label": "图片",
+                "format": "url",
+                "mediaKind": "image"
+              },
+              "maxItems": 500
+            }
+          }
+        },
+        "maxItems": 100
+      }
+    }
+  },
+  "comments": {
+    "type": "object",
+    "label": "评论服务",
+    "properties": {
+      "type": {
+        "type": "string",
+        "label": "评论系统",
+        "enum": [
+          "none",
+          "twikoo",
+          "waline",
+          "giscus",
+          "disqus",
+          "artalk"
+        ]
+      },
+      "twikoo": {
+        "type": "object",
+        "label": "Twikoo",
+        "properties": {
+          "envId": {
+            "type": "string",
+            "label": "服务地址",
+            "format": "url"
+          },
+          "lang": {
+            "type": "string",
+            "label": "语言"
+          },
+          "visitorCount": {
+            "type": "boolean",
+            "label": "访问量"
+          }
+        }
+      },
+      "waline": {
+        "type": "object",
+        "label": "Waline",
+        "properties": {
+          "serverURL": {
+            "type": "string",
+            "label": "服务地址",
+            "format": "url"
+          },
+          "lang": {
+            "type": "string",
+            "label": "语言"
+          },
+          "login": {
+            "type": "string",
+            "label": "登录要求",
+            "enum": [
+              "enable",
+              "force",
+              "disable"
+            ]
+          },
+          "visitorCount": {
+            "type": "boolean",
+            "label": "访问量"
+          }
+        }
+      },
+      "artalk": {
+        "type": "object",
+        "label": "Artalk",
+        "properties": {
+          "server": {
+            "type": "string",
+            "label": "服务地址",
+            "format": "url"
+          },
+          "locale": {
+            "type": "string",
+            "label": "语言"
+          },
+          "visitorCount": {
+            "type": "boolean",
+            "label": "访问量"
+          }
+        }
+      },
+      "giscus": {
+        "type": "object",
+        "label": "Giscus",
+        "properties": {
+          "repo": {
+            "type": "string",
+            "label": "仓库"
+          },
+          "repoId": {
+            "type": "string",
+            "label": "仓库 ID"
+          },
+          "category": {
+            "type": "string",
+            "label": "分类"
+          },
+          "categoryId": {
+            "type": "string",
+            "label": "分类 ID"
+          },
+          "mapping": {
+            "type": "string",
+            "label": "映射",
+            "enum": [
+              "pathname",
+              "url",
+              "title",
+              "og:title",
+              "specific",
+              "number"
+            ]
+          },
+          "lang": {
+            "type": "string",
+            "label": "语言"
+          }
+        }
+      },
+      "disqus": {
+        "type": "object",
+        "label": "Disqus",
+        "properties": {
+          "shortname": {
+            "type": "string",
+            "label": "站点短名称"
+          }
+        }
+      }
+    }
+  },
+  "analytics": {
+    "type": "object",
+    "label": "公开站点统计",
+    "properties": {
+      "googleAnalyticsId": {
+        "type": "string",
+        "label": "Google Analytics ID"
+      },
+      "microsoftClarityId": {
+        "type": "string",
+        "label": "Clarity ID"
+      },
+      "umamiAnalytics": {
+        "type": "object",
+        "label": "Umami",
+        "properties": {
+          "websiteId": {
+            "type": "string",
+            "label": "站点 ID"
+          },
+          "scriptUrl": {
+            "type": "string",
+            "label": "统计脚本地址",
+            "format": "url"
+          },
+          "trackOutboundLinks": {
+            "type": "boolean",
+            "label": "追踪外链"
+          },
+          "collectWebVitals": {
+            "type": "boolean",
+            "label": "性能指标"
+          },
+          "replays": {
+            "type": "object",
+            "label": "会话录制",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "label": "启用（仅公开页面）"
+              }
+            }
+          }
+        }
+      },
+      "la51Analytics": {
+        "type": "object",
+        "label": "51la",
+        "properties": {
+          "Id": {
+            "type": "string",
+            "label": "站点 ID"
+          },
+          "autoTrack": {
+            "type": "boolean",
+            "label": "事件分析"
+          },
+          "screenRecord": {
+            "type": "boolean",
+            "label": "录制（仅公开页面）"
+          }
+        }
+      }
+    }
+  },
+  "collections": {
+    "type": "object",
+    "label": "追番与收藏平台",
+    "properties": {
+      "bilibili": {
+        "type": "object",
+        "label": "Bilibili",
+        "properties": {
+          "uid": {
+            "type": "string",
+            "label": "UID"
+          }
+        }
+      },
+      "bangumi": {
+        "type": "object",
+        "label": "Bangumi",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "label": "用户 ID"
+          },
+          "mode": {
+            "type": "string",
+            "label": "读取方式",
+            "enum": [
+              "static",
+              "dynamic"
+            ]
+          },
+          "apiUrl": {
+            "type": "string",
+            "label": "API 地址",
+            "format": "url"
+          },
+          "nsfw": {
+            "type": "string",
+            "label": "敏感封面",
+            "enum": [
+              "off",
+              "blur",
+              "hide"
+            ]
+          }
+        }
+      },
+      "vndb": {
+        "type": "object",
+        "label": "VNDB（公开列表）",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "label": "用户 ID"
+          },
+          "mode": {
+            "type": "string",
+            "label": "读取方式",
+            "enum": [
+              "static",
+              "dynamic"
+            ]
+          },
+          "apiUrl": {
+            "type": "string",
+            "label": "API 地址",
+            "format": "url"
+          },
+          "downloadCovers": {
+            "type": "boolean",
+            "label": "下载封面（增加构建耗时）"
+          },
+          "nsfw": {
+            "type": "string",
+            "label": "敏感封面",
+            "enum": [
+              "off",
+              "blur",
+              "hide"
+            ]
+          }
+        }
+      },
+      "mal": {
+        "type": "object",
+        "label": "MyAnimeList",
+        "properties": {
+          "username": {
+            "type": "string",
+            "label": "用户名"
+          },
+          "clientId": {
+            "type": "string",
+            "label": "公开 Client ID"
+          }
+        }
+      }
+    }
+  }
+}

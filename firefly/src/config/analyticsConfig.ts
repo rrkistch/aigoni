@@ -1,3 +1,4 @@
+import {applyThemeGroup} from "./aigoni-theme";
 import type { AnalyticsConfig } from "../types/analyticsConfig";
 
 export const analyticsConfig: AnalyticsConfig = {
@@ -47,3 +48,5 @@ export const analyticsConfig: AnalyticsConfig = {
 		screenRecord: true,
 	},
 };
+
+applyThemeGroup("analytics",analyticsConfig);

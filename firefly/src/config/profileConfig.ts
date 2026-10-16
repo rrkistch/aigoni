@@ -1,3 +1,4 @@
+import { applyThemeGroup } from "./aigoni-theme";
 import { aigoniSite } from "./aigoni-config";
 import type { ProfileConfig } from "../types/profileConfig";
 
@@ -55,3 +56,5 @@ if (aigoniSite) {
  if(aigoniSite.avatar) profileConfig.avatar=aigoniSite.avatar;
  profileConfig.links.push({name:"工作区",url:aigoniSite.adminPath,icon:"material-symbols:lock-outline",showName:true});
 }
+
+applyThemeGroup("profile", profileConfig);

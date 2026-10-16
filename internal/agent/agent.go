@@ -40,6 +40,7 @@ func New(ctx context.Context, cfg Config) (*ChatModelRunner, error) {
 	temperature := float32(0.2)
 	model, err := openai.NewChatModel(ctx, &openai.ChatModelConfig{
 		APIKey:      cfg.APIKey,
+		HTTPClient:  cfg.HTTPClient,
 		BaseURL:     strings.TrimRight(cfg.BaseURL, "/"),
 		Model:       cfg.Model,
 		Temperature: &temperature,

@@ -1,3 +1,4 @@
+import { applyThemeGroup } from "./aigoni-theme";
 import type { GalleryConfig } from "@/types/galleryConfig";
 
 // 相册配置
@@ -40,3 +41,5 @@ export const galleryConfig: GalleryConfig = {
 	// 值越小列数越多，值越大列数越少
 	columnWidth: 240,
 };
+
+applyThemeGroup("gallery", galleryConfig);

@@ -1,13 +1,17 @@
 package agent
 
-import "context"
+import (
+	"context"
+	"net/http"
+)
 
 // Config describes the local workspace and model settings used by the Wiki Agent.
 type Config struct {
-	Root    string
-	APIKey  string
-	BaseURL string
-	Model   string
+	HTTPClient *http.Client
+	Root       string
+	APIKey     string
+	BaseURL    string
+	Model      string
 
 	MaxIterations int
 	Limits        ToolLimits

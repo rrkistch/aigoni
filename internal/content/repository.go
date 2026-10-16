@@ -188,6 +188,28 @@ func (r *Repository) GetByPath(path string, typ Type) (*Item, error) {
 }
 
 func (r *Repository) Save(input SaveInput) (*Item, error) {
+	if input.ID != "" && input.Type != TypeNote {
+		current, err := r.GetByID(input.ID, input.Type)
+		if err != nil && !errors.Is(err, os.ErrNotExist) {
+			return nil, err
+		}
+		if err == nil {
+			if input.Display == nil {
+				input.Display = current.Display
+			}
+			aliases := Aliases(current)
+			if current.Publish && current.Slug != "" && input.Slug != "" && current.Slug != input.Slug {
+				aliases = append(aliases, current.Slug)
+			}
+			if len(aliases) > 0 {
+				if input.Display == nil {
+					input.Display = map[string]any{}
+				}
+				input.Display["_aliases"] = aliases
+			}
+
+		}
+	}
 	if input.Type == TypeNote {
 		return r.saveNote(input)
 	}
@@ -521,6 +543,10 @@ func (r *Repository) Delete(id string, typ Type) error {
 
 func (r *Repository) root(typ Type) (string, error) {
 	switch typ {
+	case TypeDynamic:
+		return filepath.Join(filepath.Dir(r.PostsDir), "dynamics"), nil
+	case TypeProject:
+		return filepath.Join(filepath.Dir(r.PostsDir), "projects"), nil
 	case TypePost:
 		return r.PostsDir, nil
 	case TypePage:
@@ -612,4 +638,29 @@ func sanitizeSlug(value string) string {
 	value = strings.ToLower(strings.TrimSpace(value))
 	value = safeSlug.ReplaceAllString(value, "-")
 	return strings.Trim(value, "-")
+}
+
+// Aliases are maintained by storage, not editable presentation metadata.
+func Aliases(item *Item) []string {
+	out := []string{}
+	seen := map[string]bool{}
+	add := func(v string) {
+		if v != "" && v != item.Slug && !seen[v] && safeSlug.ReplaceAllString(v, "") == v {
+			out = append(out, v)
+			seen[v] = true
+		}
+	}
+	switch values := item.Display["_aliases"].(type) {
+	case []string:
+		for _, v := range values {
+			add(v)
+		}
+	case []any:
+		for _, v := range values {
+			if text, ok := v.(string); ok {
+				add(text)
+			}
+		}
+	}
+	return out
 }

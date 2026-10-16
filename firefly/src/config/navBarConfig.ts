@@ -1,3 +1,4 @@
+import { applyThemeGroup } from "./aigoni-theme";
 import {
 	type NavBarConfig,
 	type NavBarLink,
@@ -244,3 +245,5 @@ export const LinkPresets: Record<string, NavBarLink> = {
 };
 
 export const navBarConfig: NavBarConfig = getDynamicNavBarConfig();
+
+applyThemeGroup("navigation", navBarConfig);

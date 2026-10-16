@@ -26,6 +26,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET "+adminPath, s.adminFrontend)
 	mux.HandleFunc("GET "+adminPath+"/", s.adminFrontend)
 
+	mux.HandleFunc("GET /_media/", s.serveMedia)
+	mux.HandleFunc("GET /_preview/", s.servePreview)
 	mux.HandleFunc("GET /uploads/", s.upload)
 	mux.HandleFunc("GET /assets/", s.asset)
 	mux.HandleFunc("GET /_app/web/", s.webFrontend)

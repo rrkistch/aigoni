@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"io/fs"
 	"net/http"
 	"path/filepath"
@@ -14,6 +15,16 @@ import (
 )
 
 type Server struct {
+	previewContext  context.Context
+	previewMu       sync.Mutex
+	previewActive   bool
+	mediaMu         sync.Mutex
+	themeMu         sync.Mutex
+	aiMu            sync.Mutex
+	aiWriteRunner   agent.Runner
+	aiReadRunner    agent.Runner
+	aiWriteVersion  string
+	aiReadVersion   string
 	siteBuild       *siteBuilder
 	cfg             *config.Config
 	env             *config.Env
@@ -67,6 +78,7 @@ func NewWithFrontendFS(root string, cfg *config.Config, env *config.Env, webFron
 	}
 	if env.FrontendMode == "firefly" {
 		s.siteBuild = newSiteBuilder(s)
+		s.recoverPreviews()
 	}
 	return s
 }

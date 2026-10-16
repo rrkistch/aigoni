@@ -16,6 +16,23 @@ func (s *Server) registerAdminAPIRoutes(mux *http.ServeMux) {
 		mux.Handle(pattern, s.requireAdminAPIAuth(handler))
 	}
 	auth("GET "+adminAPIBasePath+"/dashboard", s.adminAPIDashboard)
+	auth("POST "+adminAPIBasePath+"/previews", s.previewsAPI)
+	auth("GET "+adminAPIBasePath+"/previews/{id}", s.previewsAPI)
+	auth("GET "+adminAPIBasePath+"/media", s.mediaAPI)
+	auth("DELETE "+adminAPIBasePath+"/media/{id}", s.mediaAPI)
+	auth("POST "+adminAPIBasePath+"/media/uploads", s.mediaUploadAPI)
+	auth("GET "+adminAPIBasePath+"/media/uploads/{id}", s.mediaUploadAPI)
+	auth("PUT "+adminAPIBasePath+"/media/uploads/{id}", s.mediaUploadAPI)
+	auth("DELETE "+adminAPIBasePath+"/media/uploads/{id}", s.mediaUploadAPI)
+	auth("POST "+adminAPIBasePath+"/media/uploads/{id}/complete", s.mediaUploadAPI)
+	auth("GET "+adminAPIBasePath+"/theme-settings", s.themeSettingsAPI)
+	auth("GET "+adminAPIBasePath+"/settings-history", s.settingsHistoryAPI)
+	auth("POST "+adminAPIBasePath+"/settings-history/{revision}/restore", s.settingsHistoryAPI)
+	auth("PATCH "+adminAPIBasePath+"/theme-settings", s.themeSettingsAPI)
+	auth("GET "+adminAPIBasePath+"/ai/providers", s.aiProvidersAPI)
+	auth("PATCH "+adminAPIBasePath+"/ai/providers", s.aiProvidersAPI)
+	auth("POST "+adminAPIBasePath+"/ai/providers/{id}/models", s.aiModelsAPI)
+	auth("POST "+adminAPIBasePath+"/ai/providers/{id}/test", s.aiTestAPI)
 	auth("GET "+adminAPIBasePath+"/site-build", s.siteBuildAPI)
 	auth("POST "+adminAPIBasePath+"/site-build", s.siteBuildAPI)
 	auth("GET "+adminAPIBasePath+"/settings", s.settingsAPI)
@@ -34,6 +51,8 @@ func registerAdminContentRoutes(s *Server, auth func(string, http.HandlerFunc)) 
 		typ  content.Type
 	}{
 		{name: "posts", typ: content.TypePost},
+		{name: "dynamics", typ: content.TypeDynamic},
+		{name: "projects", typ: content.TypeProject},
 		{name: "pages", typ: content.TypePage},
 		{name: "notes", typ: content.TypeNote},
 	} {

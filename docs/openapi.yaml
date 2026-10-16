@@ -12,6 +12,727 @@ tags:
   - name: Machine API
   - name: Admin API
 paths:
+  /api/admin/v1/theme-settings:
+    get:
+      tags:
+        - Admin API
+      summary: Read editable schema, theme defaults, overrides and revision
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: &a1
+                type: object
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+    patch:
+      tags:
+        - Admin API
+      summary: Save selected groups; null restores a group default; queue public build
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - revision
+                - groups
+              properties:
+                revision:
+                  type: integer
+                  minimum: 0
+                groups:
+                  type: object
+                  description: Editable groups described by GET schema; unknown fields rejected.
+                    64 KiB request limit.
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+        "403":
+          description: Invalid CSRF token
+        "409":
+          description: Revision or state conflict
+  /api/admin/v1/ai/providers:
+    get:
+      tags:
+        - Admin API
+      summary: Read saved connections without keys and effective source
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+    patch:
+      tags:
+        - Admin API
+      summary: Replace connection list and default; omitted keys retain previous secrets
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - revision
+                - providers
+                - default_provider
+              properties:
+                revision:
+                  type: integer
+                default_provider:
+                  type: string
+                  description: Empty uses legacy environment configuration.
+                providers:
+                  type: array
+                  maxItems: 20
+                  items:
+                    type: object
+                    required:
+                      - name
+                      - base_url
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      base_url:
+                        type: string
+                      api_key:
+                        type: string
+                        writeOnly: true
+                      model:
+                        type: string
+                      allow_private:
+                        type: boolean
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+        "403":
+          description: Invalid CSRF token
+        "409":
+          description: Revision or state conflict
+  /api/admin/v1/ai/providers/{id}/models:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - Admin API
+      summary: Discover model IDs without generating a conversation
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+        "403":
+          description: Invalid CSRF token
+        "409":
+          description: Revision or state conflict
+  /api/admin/v1/ai/providers/{id}/test:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - Admin API
+      summary: Explicit paid streaming/tool-call test; no Wiki action is executed
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - confirm_cost
+              properties:
+                confirm_cost:
+                  type: boolean
+                  const: true
+                model:
+                  type: string
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+        "403":
+          description: Invalid CSRF token
+        "409":
+          description: Revision or state conflict
+  /api/admin/v1/media:
+    get:
+      tags:
+        - Admin API
+      summary: List public media and current references
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+  /api/admin/v1/media/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    delete:
+      tags:
+        - Admin API
+      summary: Delete unreferenced public media
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+        "409":
+          description: Still referenced
+  /api/admin/v1/media/uploads:
+    post:
+      tags:
+        - Admin API
+      summary: Start resumable public media upload
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - size
+              properties:
+                name:
+                  type: string
+                size:
+                  type: integer
+                  minimum: 1
+      responses:
+        "201":
+          description: Upload ID and offset
+        "400":
+          description: Unsupported type or size
+  /api/admin/v1/media/uploads/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - Admin API
+      summary: Read upload offset
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+    put:
+      tags:
+        - Admin API
+      summary: Append at exact offset; maximum chunk 8 MiB
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+        "403":
+          description: Invalid CSRF token
+        "409":
+          description: Revision or state conflict
+      parameters:
+        - name: offset
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+    delete:
+      tags:
+        - Admin API
+      summary: Cancel temporary upload
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      responses:
+        "204":
+          description: Cancelled
+  /api/admin/v1/media/uploads/{id}/complete:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - Admin API
+      summary: Validate content and publish immutable media address
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      responses:
+        "201":
+          description: Media item
+        "400":
+          description: Invalid file
+        "409":
+          description: Incomplete
+  /api/admin/v1/settings-history:
+    get:
+      tags:
+        - Admin API
+      summary: List last 20 non-sensitive theme configuration revisions
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+  /api/admin/v1/settings-history/{revision}/restore:
+    parameters:
+      - name: revision
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      tags:
+        - Admin API
+      summary: Restore configuration while preserving current content; queue rebuild
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - revision
+              properties:
+                revision:
+                  type: integer
+                  description: Expected current configuration revision
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+        "403":
+          description: Invalid CSRF token
+        "409":
+          description: Revision or state conflict
+  /api/admin/v1/previews:
+    post:
+      tags:
+        - Admin API
+      summary: Queue authenticated Firefly preview without publishing
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - posts
+                    - pages
+                    - dynamics
+                    - projects
+                id:
+                  type: string
+                groups:
+                  type: object
+      responses:
+        "202":
+          description: Preview task with ID and URL
+        "409":
+          description: Preview busy or disabled
+  /api/admin/v1/previews/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - Admin API
+      summary: Read preview status
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+  /api/admin/v1/dynamics:
+    get:
+      tags:
+        - Admin API
+      summary: List dynamics
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+    post:
+      tags:
+        - Admin API
+      summary: Create Markdown dynamics
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: *a1
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+        "403":
+          description: Invalid CSRF token
+        "409":
+          description: Revision or state conflict
+  /api/admin/v1/dynamics/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - Admin API
+      summary: Read content and revision
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+    patch:
+      tags:
+        - Admin API
+      summary: Edit content with existing revision contract
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: *a1
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+        "403":
+          description: Invalid CSRF token
+        "409":
+          description: Revision or state conflict
+    delete:
+      tags:
+        - Admin API
+      summary: Delete content with existing revision contract
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+        "403":
+          description: Invalid CSRF token
+        "409":
+          description: Revision or state conflict
+  /api/admin/v1/projects:
+    get:
+      tags:
+        - Admin API
+      summary: List projects
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+    post:
+      tags:
+        - Admin API
+      summary: Create Markdown projects
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: *a1
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+        "403":
+          description: Invalid CSRF token
+        "409":
+          description: Revision or state conflict
+  /api/admin/v1/projects/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - Admin API
+      summary: Read content and revision
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+    patch:
+      tags:
+        - Admin API
+      summary: Edit content with existing revision contract
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: *a1
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+        "403":
+          description: Invalid CSRF token
+        "409":
+          description: Revision or state conflict
+    delete:
+      tags:
+        - Admin API
+      summary: Delete content with existing revision contract
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      responses:
+        "200":
+          description: Operation result
+          content:
+            application/json:
+              schema: *a1
+        "400":
+          description: Invalid input
+        "401":
+          description: Login required
+        "403":
+          description: Invalid CSRF token
+        "409":
+          description: Revision or state conflict
   /rest/v1:
     get:
       tags: [Public REST]

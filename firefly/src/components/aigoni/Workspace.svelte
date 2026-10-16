@@ -4,13 +4,16 @@
  import ContentEditor from "./ContentEditor.svelte";
  import Knowledge from "./Knowledge.svelte";
  import Settings from "./Settings.svelte";
+ import AISettings from "./AISettings.svelte";
+ import ThemeSettings from "./ThemeSettings.svelte";
+ import MediaLibrary from "./MediaLibrary.svelte";
  import "./workspace.css";
  let authenticated=$state(false);let checking=$state(true);let password=$state("");let error=$state("");let busy=$state(false);
  let section=$state("overview");let list=$state<any>({items:[],total:0,total_pages:0});let page=$state(1);let query=$state("");let category=$state("");let tag=$state("");let published=$state("");
  let categories=$state<any[]>([]);let tags=$state<any[]>([]);let editing=$state(false);let itemId=$state("");let dashboard=$state<any>(null);let build=$state<any>(null);
  let request=0;let timer:ReturnType<typeof setInterval>;let disposed=false;
- const tabs=[["overview","概览"],["posts","文章"],["pages","页面"],["notes","笔记与收藏"],["wiki","Wiki"],["chat","AI 对话"],["settings","设置"]];
- const contentSection=()=>["posts","pages","notes"].includes(section);
+ const tabs=[["overview","概览"],["posts","文章"],["pages","页面"],["dynamics","动态"],["projects","项目"],["notes","笔记与收藏"],["wiki","Wiki"],["chat","AI 对话"],["settings","设置"],["ai-settings","AI 服务"],["appearance","外观与模块"],["media","素材"]];
+ const contentSection=()=>["posts","pages","notes","dynamics","projects"].includes(section);
  const title=()=>tabs.find(t=>t[0]===section)?.[1]||"工作区";
  async function refreshStatus(){if(authenticated){[dashboard,build]=await Promise.all([api("/dashboard"),api("/site-build")]);}}
  async function check(){try{const session=await api("/session");setCSRF(session.csrf_token);authenticated=true;await refreshStatus();const initial=location.hash.slice(1)||location.pathname.split("/")[2];if(tabs.some(t=>t[0]===initial))await navigate(initial);}catch{authenticated=false;error="";}finally{checking=false;}}
@@ -20,9 +23,10 @@
   const serial=++request;busy=true;error="";
   const params=new URLSearchParams({page:String(page),per_page:"20"});
   let endpoint="/"+section;
-  if(query.trim()){endpoint="/search";params.set("q",query.trim());params.set("type",section.slice(0,-1));}
+  if(query.trim()&&!["dynamics","projects"].includes(section)){endpoint="/search";params.set("q",query.trim());params.set("type",section.slice(0,-1));}
   else{if(category)params.set("category",category);if(tag)params.set("tag",tag);if(published&&section!=="notes")params.set("publish",published);}
   try{
+   if(query.trim())params.set("q",query.trim());
    const result=await api(endpoint+"?"+params);
    if(serial===request&&!disposed)list=result;
   }catch(e){if(serial===request)error=(e as Error).message;}finally{if(serial===request)busy=false;}
@@ -93,6 +97,9 @@
   {/if}
  {:else if section==="wiki"||section==="chat"}
   {#key section}<Knowledge mode={section} />{/key}
- {:else if section==="settings"}<Settings />{/if}
+ {:else if section==="settings"}<Settings />
+ {:else if section==="ai-settings"}<AISettings />
+ {:else if section==="appearance"}<ThemeSettings />
+ {:else if section==="media"}<MediaLibrary />{/if}
  {/if}
 </div>

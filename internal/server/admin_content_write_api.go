@@ -17,46 +17,48 @@ import (
 const adminAPIBase = adminAPIBasePath
 
 type adminContentPayload struct {
-	Title       *string   `json:"title"`
-	Description *string   `json:"description"`
-	Date        *string   `json:"date"`
-	Publish     *bool     `json:"publish"`
-	Slug        *string   `json:"slug"`
-	Category    *string   `json:"category"`
-	Tags        *[]string `json:"tags"`
-	CoverImage  *string   `json:"cover_image"`
-	TOC         *bool     `json:"toc"`
-	Template    *string   `json:"template"`
-	SourceURL   *string   `json:"source_url"`
-	Weight      *int      `json:"weight"`
-	Body        *string   `json:"body"`
-	Revision    string    `json:"revision"`
-	DraftToken  string    `json:"draft_token"`
+	Display     *map[string]any `json:"display"`
+	Title       *string         `json:"title"`
+	Description *string         `json:"description"`
+	Date        *string         `json:"date"`
+	Publish     *bool           `json:"publish"`
+	Slug        *string         `json:"slug"`
+	Category    *string         `json:"category"`
+	Tags        *[]string       `json:"tags"`
+	CoverImage  *string         `json:"cover_image"`
+	TOC         *bool           `json:"toc"`
+	Template    *string         `json:"template"`
+	SourceURL   *string         `json:"source_url"`
+	Weight      *int            `json:"weight"`
+	Body        *string         `json:"body"`
+	Revision    string          `json:"revision"`
+	DraftToken  string          `json:"draft_token"`
 }
 
 type adminContentMutationResponse struct {
-	ID          string       `json:"id"`
-	Path        string       `json:"path"`
-	Type        content.Type `json:"type"`
-	Title       string       `json:"title"`
-	Description string       `json:"description"`
-	Date        time.Time    `json:"date"`
-	Lastmod     time.Time    `json:"lastmod"`
-	Publish     bool         `json:"publish,omitempty"`
-	Slug        string       `json:"slug,omitempty"`
-	Category    string       `json:"category,omitempty"`
-	Tags        []string     `json:"tags"`
-	CoverImage  string       `json:"cover_image,omitempty"`
-	TOC         bool         `json:"toc,omitempty"`
-	Template    string       `json:"template,omitempty"`
-	SourceURL   string       `json:"source_url,omitempty"`
-	Weight      int          `json:"weight,omitempty"`
-	Body        string       `json:"body"`
-	HTML        string       `json:"html"`
-	Revision    string       `json:"revision"`
-	SavedAt     time.Time    `json:"saved_at"`
-	EditURL     string       `json:"edit_url"`
-	AssetPrefix string       `json:"asset_prefix"`
+	Display     map[string]any `json:"display,omitempty"`
+	ID          string         `json:"id"`
+	Path        string         `json:"path"`
+	Type        content.Type   `json:"type"`
+	Title       string         `json:"title"`
+	Description string         `json:"description"`
+	Date        time.Time      `json:"date"`
+	Lastmod     time.Time      `json:"lastmod"`
+	Publish     bool           `json:"publish,omitempty"`
+	Slug        string         `json:"slug,omitempty"`
+	Category    string         `json:"category,omitempty"`
+	Tags        []string       `json:"tags"`
+	CoverImage  string         `json:"cover_image,omitempty"`
+	TOC         bool           `json:"toc,omitempty"`
+	Template    string         `json:"template,omitempty"`
+	SourceURL   string         `json:"source_url,omitempty"`
+	Weight      int            `json:"weight,omitempty"`
+	Body        string         `json:"body"`
+	HTML        string         `json:"html"`
+	Revision    string         `json:"revision"`
+	SavedAt     time.Time      `json:"saved_at"`
+	EditURL     string         `json:"edit_url"`
+	AssetPrefix string         `json:"asset_prefix"`
 }
 
 type adminAPIErrorEnvelope struct {
@@ -222,7 +224,7 @@ func patchInput(payload adminContentPayload, current *content.Item) (content.Sav
 		ID: current.ID, Type: current.Type, Title: current.Title, Description: current.Description,
 		Date: current.Date, Publish: current.Publish, Slug: current.Slug, Category: current.Category,
 		Tags: current.Tags, CoverImage: current.CoverImage, TOC: current.TOC, Template: current.Template,
-		SourceURL: current.SourceURL, Weight: current.Weight, Body: current.Body,
+		SourceURL: current.SourceURL, Weight: current.Weight, Body: current.Body, Display: current.Display,
 	}
 	applyPayload(&input, payload)
 	if current.Type == content.TypeNote {
@@ -247,6 +249,13 @@ func patchInput(payload adminContentPayload, current *content.Item) (content.Sav
 
 func validatePayloadFields(payload adminContentPayload, typ content.Type, create bool) map[string]string {
 	errs := map[string]string{}
+	if payload.Display != nil {
+		if typ == content.TypeNote {
+			errs["display"] = "私人笔记不接受公开展示配置"
+		} else if err := validateAdminValue(displayField(), map[string]any(*payload.Display), "内容展示"); err != nil {
+			errs["display"] = err.Error()
+		}
+	}
 	if create && payload.Date == nil {
 		errs["date"] = "日期不能为空"
 	}
@@ -297,6 +306,9 @@ func validatePayloadFields(payload adminContentPayload, typ content.Type, create
 }
 
 func applyPayload(input *content.SaveInput, payload adminContentPayload) {
+	if payload.Display != nil {
+		input.Display = *payload.Display
+	}
 	if payload.Title != nil {
 		input.Title = strings.TrimSpace(*payload.Title)
 	}
@@ -347,7 +359,7 @@ func (s *Server) adminContentResult(item *content.Item, revision string) adminCo
 		ID: content.StableID(item.ID, item.Type), Path: filepathRelative(s.root, item.Path), Type: item.Type, Title: item.Title,
 		Description: item.Description, Date: item.Date, Lastmod: item.Lastmod, Publish: item.Publish,
 		Slug: item.Slug, Category: item.Category, Tags: tags, CoverImage: item.CoverImage, TOC: item.TOC,
-		Template: item.Template, SourceURL: item.SourceURL, Weight: item.Weight,
+		Template: item.Template, SourceURL: item.SourceURL, Weight: item.Weight, Display: publicDisplay(item.Display),
 		Body: item.Body, HTML: item.HTML, Revision: revision, SavedAt: time.Now().UTC(),
 		EditURL:     s.adminURL(fmt.Sprintf("%ss/%s/edit", item.Type, content.StableID(item.ID, item.Type))),
 		AssetPrefix: "/assets/" + string(item.Type) + "s/" + item.ID + ".assets",
@@ -383,6 +395,10 @@ func decodeAdminContentID(encoded string) (string, error) {
 
 func adminAPIContentType(value string) (content.Type, bool) {
 	switch value {
+	case "dynamics":
+		return content.TypeDynamic, true
+	case "projects":
+		return content.TypeProject, true
 	case "posts":
 		return content.TypePost, true
 	case "pages":

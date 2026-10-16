@@ -1,3 +1,4 @@
+import { applyThemeGroup } from "./aigoni-theme";
 import type { SidebarLayoutConfig } from "../types/sidebarConfig";
 
 /**
@@ -316,3 +317,5 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 		},
 	],
 };
+
+applyThemeGroup("sidebar", sidebarLayoutConfig);

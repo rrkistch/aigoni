@@ -1,3 +1,4 @@
+import { applyThemeGroup } from "./aigoni-theme";
 import type { FriendLink, FriendsPageConfig } from "../types/friendsConfig";
 
 // 可以在src/content/spec/friends.md中编写友链页面下方的自定义内容
@@ -62,3 +63,5 @@ export const getEnabledFriends = (): FriendLink[] => {
 
 	return friends.sort((a, b) => b.weight - a.weight);
 };
+
+applyThemeGroup("friends", friendsConfig);

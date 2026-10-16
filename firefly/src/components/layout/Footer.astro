@@ -1,5 +1,6 @@
 ---
 import fs from "node:fs";
+import { aigoniFooter } from "@/config/aigoni-footer";
 import path from "node:path";
 import { profileConfig } from "@/config";
 import { url } from "@/utils/url-utils";
@@ -38,6 +39,9 @@ try {
 		<div class="transition text-50 text-sm text-center wrap">
 			<div class="mb-2">
 				{customFooterHtml && <div set:html={customFooterHtml} />}
+                {aigoniFooter.text && <p>{aigoniFooter.text}</p>}
+                {aigoniFooter.icpText && <a href={aigoniFooter.icpURL || undefined} rel="noopener noreferrer" target="_blank">{aigoniFooter.icpText}</a>}
+                {aigoniFooter.links.map(link => <a class="mx-2" href={link.url}>{link.text}</a>)}
 			</div>
 			<div class="mx-0.5 my-2.5 flex gap-x-2 gap-y-2.5 justify-center flex-wrap">
 				&copy; <span id="copyright-year">{currentYear}</span>

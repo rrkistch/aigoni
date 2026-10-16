@@ -1,3 +1,4 @@
+import { applyThemeGroup } from "./aigoni-theme";
 /**
  * 字体配置（统一入口）
  *
@@ -111,3 +112,5 @@ export const fontConfig: FontSelectionConfig = {
 		},
 	},
 };
+
+applyThemeGroup("fonts", fontConfig);

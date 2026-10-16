@@ -26,3 +26,4 @@ config.yaml
 /docker.env
 /compose.env
 /backups/
+/.aigoni-admin/

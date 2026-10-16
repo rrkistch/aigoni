@@ -1,3 +1,4 @@
+import {themeGroup} from "@/config/aigoni-theme";
 import fs from "node:fs";
 import path from "node:path";
 import type { GalleryAlbum } from "@/types/config";
@@ -22,6 +23,8 @@ function withBase(assetPath: string): string {
  * 扫描相册目录中的所有图片文件
  */
 export function scanAlbumPhotos(albumId: string): string[] {
+ const configured=themeGroup("gallery")?.albums?.find((album:any)=>album.id===albumId);
+ if(configured&&Array.isArray(configured.photos))return configured.photos.map(withBase);
 	const dir = path.join(process.cwd(), "public", "gallery", albumId);
 	if (!fs.existsSync(dir)) return [];
 	const files = fs

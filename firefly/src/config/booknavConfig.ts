@@ -1,3 +1,4 @@
+import { applyThemeGroup } from "./aigoni-theme";
 import type { BooknavGroup, BooknavPageConfig } from "../types/booknavConfig";
 
 // 书签导航页面配置
@@ -154,3 +155,5 @@ export const booknavConfig: BooknavGroup[] = [
 		],
 	},
 ];
+
+applyThemeGroup("booknav", booknavConfig);

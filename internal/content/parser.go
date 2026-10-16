@@ -33,21 +33,22 @@ var sanitize = func() *bluemonday.Policy {
 }()
 
 type matter struct {
-	Title       string   `yaml:"title"`
-	Description string   `yaml:"description"`
-	Date        string   `yaml:"date"`
-	Lastmod     string   `yaml:"lastmod"`
-	Publish     *bool    `yaml:"publish"`
-	Slug        string   `yaml:"slug"`
-	Category    string   `yaml:"category"`
-	Tags        []string `yaml:"tags"`
-	CoverImage  string   `yaml:"cover_image"`
-	TOC         bool     `yaml:"toc"`
-	Template    string   `yaml:"template"`
-	SourceURL   string   `yaml:"source_url"`
-	WikiStatus  string   `yaml:"wiki_status"`
-	WikiHash    string   `yaml:"wiki_hash"`
-	Weight      int      `yaml:"weight"`
+	Display     map[string]any `yaml:"display,omitempty"`
+	Title       string         `yaml:"title"`
+	Description string         `yaml:"description"`
+	Date        string         `yaml:"date"`
+	Lastmod     string         `yaml:"lastmod"`
+	Publish     *bool          `yaml:"publish"`
+	Slug        string         `yaml:"slug"`
+	Category    string         `yaml:"category"`
+	Tags        []string       `yaml:"tags"`
+	CoverImage  string         `yaml:"cover_image"`
+	TOC         bool           `yaml:"toc"`
+	Template    string         `yaml:"template"`
+	SourceURL   string         `yaml:"source_url"`
+	WikiStatus  string         `yaml:"wiki_status"`
+	WikiHash    string         `yaml:"wiki_hash"`
+	Weight      int            `yaml:"weight"`
 }
 
 // noteMatter 笔记专用元信息：只写笔记需要的字段，空值通过 omitempty 不落盘。
@@ -96,6 +97,7 @@ func FrontMatter(input SaveInput) ([]byte, error) {
 		input.Date = time.Now().UTC()
 	}
 	meta := matter{
+		Display:     input.Display,
 		Title:       input.Title,
 		Description: input.Description,
 		Date:        input.Date.UTC().Format(time.RFC3339),
@@ -224,6 +226,7 @@ func buildItem(meta matter, body string, typ Type) (*Item, error) {
 		WikiStatus:  meta.WikiStatus,
 		WikiHash:    meta.WikiHash,
 		Weight:      meta.Weight,
+		Display:     meta.Display,
 		Body:        body,
 		HTML:        html,
 	}, nil

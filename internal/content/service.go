@@ -97,6 +97,13 @@ func (s *Service) checkSlug(slug string, typ Type, exceptID string) error {
 		return err
 	}
 	for _, item := range items {
+		if item.ID != exceptID {
+			for _, alias := range Aliases(item) {
+				if alias == slug {
+					return ErrSlugConflict
+				}
+			}
+		}
 		if item.ID != exceptID && item.Slug == slug {
 			return ErrSlugConflict
 		}

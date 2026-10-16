@@ -1,3 +1,4 @@
+import { applyThemeGroup } from "./aigoni-theme";
 import type { BackgroundWallpaperConfig } from "@/types/backgroundWallpaper";
 
 export const backgroundWallpaper: BackgroundWallpaperConfig = {
@@ -214,3 +215,5 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 		},
 	},
 };
+
+applyThemeGroup("wallpaper", backgroundWallpaper);

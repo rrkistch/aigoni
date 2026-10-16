@@ -37,3 +37,17 @@ export async function eventStream(id:string,from:number,signal:AbortSignal,onEve
   }
  } finally {reader.releaseLock();}
 }
+
+export async function uploadMedia(file:File,onProgress:(percent:number)=>void):Promise<any>{
+ const key="aigoni-media-upload:"+file.name+":"+file.size+":"+file.lastModified;
+ let upload:any=null;
+ const prior=sessionStorage.getItem(key);
+ if(prior){try{upload=await api("/media/uploads/"+prior);}catch{sessionStorage.removeItem(key);}}
+ if(!upload){upload=await api("/media/uploads","POST",{name:file.name,size:file.size});sessionStorage.setItem(key,upload.id);}
+ while(upload.offset<file.size){
+  const end=Math.min(upload.offset+8*1024*1024,file.size);
+  const response=await fetch(base+"/media/uploads/"+upload.id+"?offset="+upload.offset,{method:"PUT",credentials:"same-origin",headers:{"X-CSRF-Token":csrf,"Content-Type":"application/octet-stream"},body:file.slice(upload.offset,end)});
+  const data=await response.json();if(!response.ok)throw new Error(data.error?.message||"上传失败，请重新选择同一文件继续。");upload=data;onProgress(Math.round(upload.offset/file.size*100));
+ }
+ const item=await api("/media/uploads/"+upload.id+"/complete","POST");sessionStorage.removeItem(key);return item;
+}

@@ -1,3 +1,4 @@
+import { applyThemeGroup } from "./aigoni-theme";
 import type { AnnouncementConfig } from "../types/announcementConfig";
 
 export const announcementConfig: AnnouncementConfig = {
@@ -21,3 +22,5 @@ export const announcementConfig: AnnouncementConfig = {
 		external: false,
 	},
 };
+
+applyThemeGroup("announcement", announcementConfig);

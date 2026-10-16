@@ -1,3 +1,4 @@
+import { applyThemeGroup } from "./aigoni-theme";
 import type { MusicPlayerConfig } from "../types/musicConfig";
 
 // 音乐播放器配置
@@ -57,3 +58,5 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 		],
 	},
 };
+
+applyThemeGroup("music", musicPlayerConfig);

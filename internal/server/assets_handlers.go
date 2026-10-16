@@ -62,6 +62,17 @@ func (s *Server) asset(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	parts := strings.SplitN(path, "/", 2)
+	if len(parts) == 2 && !s.auth.Authenticated(r) {
+		if typ, ok := adminAPIContentType(parts[0]); ok {
+			itemID := strings.SplitN(parts[1], ".assets/", 2)[0]
+			item, err := s.repo.GetByID(itemID, typ)
+			if err != nil || !item.Publish || parts[0] == "notes" {
+				http.NotFound(w, r)
+				return
+			}
+		}
+	}
 	full := filepath.Join(config.Abs(s.root, s.cfg.Paths.ContentDir), filepath.FromSlash(path))
 	notes := config.Abs(s.root, s.cfg.Paths.NotesDir)
 	if rel, err := filepath.Rel(notes, full); err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && !s.auth.Authenticated(r) {

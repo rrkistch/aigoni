@@ -17,27 +17,28 @@ const adminAPIDefaultPerPage = 20
 const adminAPIMaxPerPage = 100
 
 type adminContent struct {
-	ID          string       `json:"id"`
-	Path        string       `json:"path"`
-	Type        content.Type `json:"type"`
-	Title       string       `json:"title"`
-	Description string       `json:"description"`
-	Date        time.Time    `json:"date"`
-	Lastmod     time.Time    `json:"lastmod"`
-	Publish     bool         `json:"publish"`
-	Slug        string       `json:"slug"`
-	Category    string       `json:"category"`
-	Tags        []string     `json:"tags"`
-	CoverImage  string       `json:"cover_image"`
-	TOC         bool         `json:"toc"`
-	Template    string       `json:"template"`
-	SourceURL   string       `json:"source_url"`
-	Weight      int          `json:"weight"`
-	Body        string       `json:"body,omitempty"`
-	HTML        string       `json:"html,omitempty"`
-	Excerpt     string       `json:"excerpt,omitempty"`
-	Revision    string       `json:"revision"`
-	EditURL     string       `json:"edit_url,omitempty"`
+	Display     map[string]any `json:"display,omitempty"`
+	ID          string         `json:"id"`
+	Path        string         `json:"path"`
+	Type        content.Type   `json:"type"`
+	Title       string         `json:"title"`
+	Description string         `json:"description"`
+	Date        time.Time      `json:"date"`
+	Lastmod     time.Time      `json:"lastmod"`
+	Publish     bool           `json:"publish"`
+	Slug        string         `json:"slug"`
+	Category    string         `json:"category"`
+	Tags        []string       `json:"tags"`
+	CoverImage  string         `json:"cover_image"`
+	TOC         bool           `json:"toc"`
+	Template    string         `json:"template"`
+	SourceURL   string         `json:"source_url"`
+	Weight      int            `json:"weight"`
+	Body        string         `json:"body,omitempty"`
+	HTML        string         `json:"html,omitempty"`
+	Excerpt     string         `json:"excerpt,omitempty"`
+	Revision    string         `json:"revision"`
+	EditURL     string         `json:"edit_url,omitempty"`
 }
 
 // categoryNone 是"未分类"筛选哨兵值：category 为空表示不过滤，
@@ -116,6 +117,15 @@ func (s *Server) adminAPIContentList(w http.ResponseWriter, r *http.Request, typ
 	if err != nil {
 		writeAdminError(w, http.StatusInternalServerError, "internal_error", "无法读取内容。")
 		return
+	}
+	if q := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("q"))); q != "" {
+		filtered := items[:0]
+		for _, item := range items {
+			if strings.Contains(strings.ToLower(item.Title+" "+item.Body), q) {
+				filtered = append(filtered, item)
+			}
+		}
+		items = filtered
 	}
 	items = adminFilterContent(items, typ, r)
 	page, perPage := adminAPIPagination(r)
@@ -223,6 +233,7 @@ func adminContentFromItem(item *content.Item, detail, searchResult bool) (adminC
 		Template:    item.Template,
 		SourceURL:   item.SourceURL,
 		Weight:      item.Weight,
+		Display:     publicDisplay(item.Display),
 		Revision:    revision,
 		EditURL:     adminEditURL(item),
 	}

@@ -1,4 +1,5 @@
 ---
+import { aigoniSite } from "@/config/aigoni-config";
 import GoogleAnalytics from "@components/analytics/GoogleAnalytics.astro";
 import La51Analytics from "@components/analytics/La51Analytics.astro";
 import MicrosoftClarity from "@components/analytics/MicrosoftClarity.astro";
@@ -43,6 +44,7 @@ import "@/styles/immersive-reading.css";
 import "@/styles/variables.styl";
 import "@rehype-callouts-theme";
 
+const privatePage = Astro.url.pathname.startsWith("/_workspace") || process.env.AIGONI_PRIVATE_PREVIEW === "1";
 interface Props {
 	title?: string;
 	description?: string;
@@ -161,13 +163,13 @@ const ogImageAlt = propsOgImageAlt ?? pageTitle;
     <style is:inline>
 			@layer properties, theme, base, components, utilities;
 		</style>
-    {analyticsConfig?.googleAnalyticsId && (
+    {!privatePage && analyticsConfig?.googleAnalyticsId && (
             <GoogleAnalytics analyticsId={analyticsConfig.googleAnalyticsId} />
     )}
-    {analyticsConfig?.microsoftClarityId && (
+    {!privatePage && analyticsConfig?.microsoftClarityId && (
             <MicrosoftClarity clarityId={analyticsConfig.microsoftClarityId} />
     )}
-        {analyticsConfig?.umamiAnalytics?.websiteId && (
+        {!privatePage && analyticsConfig?.umamiAnalytics?.websiteId && (
           <UmamiAnalytics
           websiteId={analyticsConfig.umamiAnalytics.websiteId}
           scriptUrl={analyticsConfig.umamiAnalytics.scriptUrl}
@@ -177,7 +179,7 @@ const ogImageAlt = propsOgImageAlt ?? pageTitle;
           replays={analyticsConfig.umamiAnalytics.replays}
           />
         )}
-        {analyticsConfig?.la51Analytics?.Id && (
+        {!privatePage && analyticsConfig?.la51Analytics?.Id && (
             <La51Analytics
             analyticsId={analyticsConfig.la51Analytics.Id}
             sdkUrl={analyticsConfig.la51Analytics?.sdkUrl}
@@ -506,7 +508,18 @@ const ogImageAlt = propsOgImageAlt ?? pageTitle;
 
     <!-- Font Setup (Astro Font API) -->
     <FontSetup />
-  </head>
+      {aigoniSite && <script is:inline define:vars={{adminPath:aigoniSite.adminPath}}>
+      // Crossing the public/private boundary must unload public analytics scripts.
+      window.addEventListener('click', function(event) {
+        var anchor=event.target instanceof Element ? event.target.closest('a[href]') : null;
+        if(!anchor || event.defaultPrevented || event.button!==0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || anchor.target==='_blank') return;
+        var target=new URL(anchor.href,location.href);
+        if(target.origin===location.origin && (target.pathname===adminPath || target.pathname.startsWith(adminPath+'/') || target.pathname==='/login')) {
+          event.preventDefault();event.stopImmediatePropagation();location.assign(target.href);
+        }
+      },true);
+    </script>}
+</head>
   <body
     class="min-h-screen"
     class:list={[

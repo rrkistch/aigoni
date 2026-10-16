@@ -28,6 +28,10 @@ type adminUploadFunc func(string, *multipart.FileHeader) (content.AssetFile, err
 
 func adminResourceType(raw string) (content.Type, bool) {
 	switch raw {
+	case "dynamics":
+		return content.TypeDynamic, true
+	case "projects":
+		return content.TypeProject, true
 	case "posts":
 		return content.TypePost, true
 	case "pages":

@@ -96,12 +96,12 @@ const postsCollection: ContentCollection<PostData> = defineCollection({
 
 const specCollection: ContentCollection<Record<string, never>> =
 	defineCollection({
-		loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/spec" }),
+		loader: glob({ pattern: "**/*.{md,mdx}", base: process.env.AIGONI_CONTENT_DIR ? process.env.AIGONI_CONTENT_DIR + "/spec" : "./src/content/spec" }),
 		schema: z.object({}),
 	});
 
 const dynamicCollection: ContentCollection<DynamicData> = defineCollection({
-	loader: glob({ pattern: "**/*.md", base: "./src/content/dynamic" }),
+	loader: glob({ pattern: "**/*.md", base: process.env.AIGONI_CONTENT_DIR ? process.env.AIGONI_CONTENT_DIR + "/dynamics" : "./src/content/dynamic" }),
 	schema: z.object({
 		published: z.date(),
 		pinned: z.boolean().optional().default(false),
@@ -110,7 +110,7 @@ const dynamicCollection: ContentCollection<DynamicData> = defineCollection({
 });
 
 const projectsCollection: ContentCollection<ProjectData> = defineCollection({
-	loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/projects" }),
+	loader: glob({ pattern: "**/*.{md,mdx}", base: process.env.AIGONI_CONTENT_DIR ? process.env.AIGONI_CONTENT_DIR + "/projects" : "./src/content/projects" }),
 	schema: z.object({
 		title: z.string(),
 		published: z.date(),

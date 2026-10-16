@@ -1,3 +1,4 @@
+import { applyThemeGroup } from "./aigoni-theme";
 import type { DynamicConfig } from "@/types/dynamicConfig";
 
 export const dynamicConfig: DynamicConfig = {
@@ -37,3 +38,5 @@ export const dynamicConfig: DynamicConfig = {
 		parent: "users/xiaye",
 	},
 };
+
+applyThemeGroup("dynamic", dynamicConfig);

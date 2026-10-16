@@ -9,16 +9,19 @@ const snapshot=JSON.parse(await fs.readFile(input,"utf8"));
 const generation=path.basename(path.resolve(output));
 if(!/^[\w-]+$/.test(generation))throw new Error("Invalid release ID");
 const contentRoot=path.join(root,".aigoni",generation);
-for(const kind of ["posts","pages"]){
+for(const kind of ["posts","pages","dynamics","projects"]){
  await fs.mkdir(path.join(contentRoot,kind),{recursive:true});
- for(const item of snapshot[kind]){
+ for(const item of (snapshot[kind]||[])){
   if(!/^[a-zA-Z0-9_-]+$/.test(item.slug))throw new Error("Unsafe slug");
-  const fields={title:item.title,description:item.description,category:item.category,tags:item.tags,image:item.image,aigoniWeight:item.weight,aigoniTOC:item.toc,draft:false};
+  const fields={title:item.title,description:item.description,category:item.category,tags:item.tags,image:item.image,aigoniWeight:item.weight,aigoniTOC:item.toc,draft:false,sourceLink:item.sourceLink||"",...(item.display||{}),order:kind==="projects"?-item.weight:item.weight};
   const front=Object.entries(fields).map(([k,v])=>k+": "+JSON.stringify(v)).join("\n");
   await fs.writeFile(path.join(contentRoot,kind,item.slug+".md"),"---\n"+front+"\npublished: "+item.published+"\nupdated: "+item.updated+"\n---\n"+item.body+"\n");
  }
 }
-const env={...process.env,AIGONI_CONTENT_DIR:path.relative(root,contentRoot).replaceAll("\\","/"),AIGONI_ASSET_PREFIX:"/_firefly/"+generation,PUBLIC_AIGONI_SITE:JSON.stringify({...snapshot.site,adminPath:snapshot.adminPath}),ASTRO_TELEMETRY_DISABLED:"1"};
+await fs.cp(path.join(root,"src","content","spec"),path.join(contentRoot,"spec"),{recursive:true});
+const about=(snapshot.pages||[]).find(item=>item.slug==="about");
+if(about)await fs.writeFile(path.join(contentRoot,"spec","about.md"),about.body+"\n");
+const env={...process.env,AIGONI_PRIVATE_PREVIEW:snapshot.private_preview?"1":"",PUBLIC_AIGONI_THEME:JSON.stringify(snapshot.theme||{}),AIGONI_CONTENT_DIR:path.relative(root,contentRoot).replaceAll("\\","/"),AIGONI_ASSET_PREFIX:"/_firefly/"+generation,PUBLIC_AIGONI_SITE:JSON.stringify({...snapshot.site,adminPath:snapshot.adminPath}),ASTRO_TELEMETRY_DISABLED:"1"};
 delete env.CF_WORKERS;
 await new Promise((resolve,reject)=>{
  const child=spawn(process.platform==="win32"?"pnpm.cmd":"pnpm",["run","build"],{cwd:root,env,stdio:"inherit",shell:process.platform==="win32"});

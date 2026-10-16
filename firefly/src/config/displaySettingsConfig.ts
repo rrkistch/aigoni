@@ -1,3 +1,4 @@
+import { applyThemeGroup } from "./aigoni-theme";
 import type { DisplaySettingsConfig } from "../types/displaySettingsConfig";
 import { resolveDisplaySettingsConfig } from "../utils/display-settings-utils";
 
@@ -70,3 +71,5 @@ export const displaySettingsConfig: DisplaySettingsConfig =
 		// 樱花特效开关
 		sakuraSwitchable: true,
 	});
+
+applyThemeGroup("display", displaySettingsConfig);

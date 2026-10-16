@@ -25,23 +25,30 @@ import (
 )
 
 type fireflyPost struct {
-	Slug        string    `json:"slug"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	Published   time.Time `json:"published"`
-	Updated     time.Time `json:"updated"`
-	Category    string    `json:"category"`
-	Tags        []string  `json:"tags"`
-	Image       string    `json:"image"`
-	TOC         bool      `json:"toc"`
-	Weight      int       `json:"weight"`
-	Body        string    `json:"body"`
+	Aliases     []string       `json:"aliases,omitempty"`
+	SourceLink  string         `json:"sourceLink,omitempty"`
+	Display     map[string]any `json:"display,omitempty"`
+	Slug        string         `json:"slug"`
+	Title       string         `json:"title"`
+	Description string         `json:"description"`
+	Published   time.Time      `json:"published"`
+	Updated     time.Time      `json:"updated"`
+	Category    string         `json:"category"`
+	Tags        []string       `json:"tags"`
+	Image       string         `json:"image"`
+	TOC         bool           `json:"toc"`
+	Weight      int            `json:"weight"`
+	Body        string         `json:"body"`
 }
 type fireflySnapshot struct {
-	Site      map[string]any `json:"site"`
-	Posts     []fireflyPost  `json:"posts"`
-	Pages     []fireflyPost  `json:"pages"`
-	AdminPath string         `json:"adminPath"`
+	PrivatePreview bool           `json:"private_preview,omitempty"`
+	Dynamics       []fireflyPost  `json:"dynamics,omitempty"`
+	Projects       []fireflyPost  `json:"projects,omitempty"`
+	Theme          map[string]any `json:"theme,omitempty"`
+	Site           map[string]any `json:"site"`
+	Posts          []fireflyPost  `json:"posts"`
+	Pages          []fireflyPost  `json:"pages"`
+	AdminPath      string         `json:"adminPath"`
 }
 type siteBuildStatus struct {
 	Enabled           bool      `json:"enabled"`
@@ -54,6 +61,7 @@ type siteBuildStatus struct {
 	UpdatedAt         time.Time `json:"updated_at"`
 }
 type siteBuilder struct {
+	buildMu   sync.Mutex
 	mu        sync.Mutex
 	refreshMu sync.Mutex
 	state     siteBuildStatus
@@ -129,7 +137,7 @@ func (s *Server) publicSnapshot() ([]byte, error) {
 			if tags == nil {
 				tags = []string{}
 			}
-			out = append(out, fireflyPost{Slug: v.Slug, Title: v.Title, Description: v.Description, Published: v.Date, Updated: v.Lastmod, Category: v.Category, Tags: tags, Image: v.CoverImage, TOC: v.TOC, Weight: v.Weight, Body: v.Body})
+			out = append(out, fireflyPost{Slug: v.Slug, Title: v.Title, Description: v.Description, Published: v.Date, Updated: v.Lastmod, Category: v.Category, Tags: tags, Image: v.CoverImage, TOC: v.TOC, Weight: v.Weight, Body: v.Body, Display: publicDisplay(v.Display), Aliases: content.Aliases(v), SourceLink: v.SourceURL})
 		}
 		return out, nil
 	}
@@ -138,6 +146,16 @@ func (s *Server) publicSnapshot() ([]byte, error) {
 		return nil, err
 	}
 	if snap.Pages, err = collect(content.TypePage); err != nil {
+		return nil, err
+	}
+	if snap.Dynamics, err = collect(content.TypeDynamic); err != nil {
+		return nil, err
+	}
+	if snap.Projects, err = collect(content.TypeProject); err != nil {
+		return nil, err
+	}
+	snap.Theme, err = s.publicThemeSettings()
+	if err != nil {
 		return nil, err
 	}
 	return json.Marshal(snap)
@@ -156,6 +174,22 @@ func withdrawn(old, new []byte) bool {
 	}
 	for _, v := range b.Pages {
 		keys["page/"+v.Slug] = true
+	}
+	for _, v := range b.Dynamics {
+		keys["dynamic/"+v.Slug] = true
+	}
+	for _, v := range b.Projects {
+		keys["project/"+v.Slug] = true
+	}
+	for _, v := range a.Dynamics {
+		if !keys["dynamic/"+v.Slug] {
+			return true
+		}
+	}
+	for _, v := range a.Projects {
+		if !keys["project/"+v.Slug] {
+			return true
+		}
 	}
 	for _, v := range a.Posts {
 		if !keys["post/"+v.Slug] {
@@ -212,6 +246,9 @@ func (s *Server) queueSiteBuild(force bool) error {
 	return nil
 }
 func (s *Server) StartSiteBuild(ctx context.Context) {
+	s.previewMu.Lock()
+	s.previewContext = ctx
+	s.previewMu.Unlock()
 	if s.siteBuild == nil {
 		return
 	}
@@ -262,7 +299,9 @@ func (s *Server) siteBuildLoop(ctx context.Context) {
 		}
 		if err == nil {
 			job, cancel := context.WithTimeout(ctx, 15*time.Minute)
+			b.buildMu.Lock()
 			err = b.run(job, input, output)
+			b.buildMu.Unlock()
 			cancel()
 		}
 		if err == nil {
@@ -373,7 +412,7 @@ func (s *Server) siteBuildMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Path
 		mutation := r.Method == "POST" || r.Method == "PATCH" || r.Method == "PUT" || r.Method == "DELETE"
-		relevant := p == "/api/content" || strings.HasPrefix(p, adminAPIBasePath+"/posts") || strings.HasPrefix(p, adminAPIBasePath+"/pages") || strings.HasPrefix(p, adminAPIBasePath+"/settings")
+		relevant := strings.HasPrefix(p, adminAPIBasePath+"/dynamics") || strings.HasPrefix(p, adminAPIBasePath+"/projects") || p == "/api/content" || strings.HasPrefix(p, adminAPIBasePath+"/posts") || strings.HasPrefix(p, adminAPIBasePath+"/pages") || strings.HasPrefix(p, adminAPIBasePath+"/settings")
 		if !mutation || !relevant {
 			next.ServeHTTP(w, r)
 			return
@@ -389,8 +428,9 @@ func (s *Server) serveFirefly(w http.ResponseWriter, r *http.Request, admin bool
 	b := s.siteBuild
 	b.mu.Lock()
 	state := b.state
+	published := append([]byte(nil), b.published...)
 	b.mu.Unlock()
-	if state.Active == "" {
+	if state.Active == "" && !strings.HasPrefix(r.URL.Path, "/_firefly/preview-") {
 		http.Error(w, "Firefly 首次构建尚未完成，请在管理后台检查构建状态。", 503)
 		return
 	}
@@ -404,6 +444,15 @@ func (s *Server) serveFirefly(w http.ResponseWriter, r *http.Request, admin bool
 			return
 		}
 		root = filepath.Join(b.root, "releases", parts[0])
+		if strings.HasPrefix(parts[0], "preview-") {
+			if !s.auth.Authenticated(r) {
+				http.NotFound(w, r)
+				return
+			}
+			root = filepath.Join(b.root, "previews", parts[0])
+			w.Header().Set("Cache-Control", "no-store")
+			w.Header().Set("X-Robots-Tag", "noindex, nofollow")
+		}
 		requestPath = "/" + parts[1]
 	}
 	if admin {
@@ -421,6 +470,10 @@ func (s *Server) serveFirefly(w http.ResponseWriter, r *http.Request, admin bool
 		return
 	}
 	if !admin {
+		if target := publishedAlias(published, requestPath); target != "" {
+			http.Redirect(w, r, target, http.StatusMovedPermanently)
+			return
+		}
 		if slug, ok := frontendArticleSlug(requestPath); ok {
 			http.Redirect(w, r, "/posts/"+url.PathEscape(slug)+"/", http.StatusMovedPermanently)
 			return
@@ -506,3 +559,27 @@ func (s *Server) serveFirefly(w http.ResponseWriter, r *http.Request, admin bool
 }
 
 var _ io.Writer = (*buildResponse)(nil)
+
+func publishedAlias(data []byte, requestPath string) string {
+	var snap fireflySnapshot
+	if json.Unmarshal(data, &snap) != nil {
+		return ""
+	}
+	for _, group := range []struct {
+		prefix string
+		items  []fireflyPost
+	}{{"/posts/", snap.Posts}, {"/page/", snap.Pages}, {"/projects/", snap.Projects}} {
+		if !strings.HasPrefix(requestPath, group.prefix) {
+			continue
+		}
+		slug := strings.TrimSuffix(strings.TrimPrefix(requestPath, group.prefix), "/")
+		for _, item := range group.items {
+			for _, alias := range item.Aliases {
+				if alias == slug {
+					return group.prefix + url.PathEscape(item.Slug) + "/"
+				}
+			}
+		}
+	}
+	return ""
+}

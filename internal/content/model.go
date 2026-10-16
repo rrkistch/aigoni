@@ -5,12 +5,15 @@ import "time"
 type Type string
 
 const (
-	TypePost Type = "post"
-	TypePage Type = "page"
-	TypeNote Type = "note"
+	TypePost    Type = "post"
+	TypePage    Type = "page"
+	TypeNote    Type = "note"
+	TypeDynamic Type = "dynamic"
+	TypeProject Type = "project"
 )
 
 type Item struct {
+	Display     map[string]any
 	ID          string
 	Type        Type
 	Path        string
@@ -35,6 +38,7 @@ type Item struct {
 }
 
 type SaveInput struct {
+	Display     map[string]any
 	ID          string
 	Type        Type
 	Title       string

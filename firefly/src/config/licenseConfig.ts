@@ -1,3 +1,4 @@
+import { applyThemeGroup } from "./aigoni-theme";
 import type { LicenseConfig } from "../types/licenseConfig";
 
 export const licenseConfig: LicenseConfig = {
@@ -22,3 +23,5 @@ export const licenseConfig: LicenseConfig = {
 	//   → fa7-regular:copyright
 	icon: "",
 };
+
+applyThemeGroup("license", licenseConfig);

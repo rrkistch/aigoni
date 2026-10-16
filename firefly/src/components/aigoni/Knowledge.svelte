@@ -1,6 +1,7 @@
 <script lang="ts">
  import {onMount} from "svelte";
  import {api,eventStream} from "./api";
+ let providers=$state<any[]>([]);let providerID=$state("");let modelID=$state("");let modelOptions=$state<string[]>([]);
  let {mode}:{mode:"wiki"|"chat"}=$props();
  let docs=$state<{path:string}[]>([]);let selected=$state("");let html=$state("");let query=$state("");
  let prompt=$state("");let answer=$state("");let answerHTML=$state("");let run=$state<any>(null);
@@ -38,7 +39,7 @@
   if(!prompt.trim()||active())return;error="";busy=true;answer="";answerHTML="";tools=[];
   const question=prompt.trim();prompt="";
   try{
-   run=await api("/wiki/chat","POST",{message:question,history:messages.slice(-20)});
+   run=await api("/wiki/chat","POST",{message:question,history:messages.slice(-20),...(providerID?{provider_id:providerID,model:modelID}:{})});
    messages=[...messages,{role:"user",content:question}];sessionStorage.setItem(key(),run.id);
    void connect();if(timer)clearInterval(timer);timer=setInterval(refreshRun,1500);
   }catch(e){error=(e as Error).message;prompt=question;}finally{busy=false;}
@@ -46,6 +47,7 @@
  async function cancel(){try{await api("/wiki/runs/"+run.id+"/cancel","POST");await refreshRun();}catch(e){error=(e as Error).message;}}
  function nextQuestion(){if(answer){messages=[...messages,{role:"assistant",content:answer}];answer="";answerHTML="";run=null;tools=[];}}
  onMount(()=>{
+  if(mode==="chat")void api("/ai/providers").then(data=>providers=data.providers||[]).catch(e=>error=e.message);
   loadDocs().catch(e=>error=e.message);
   const id=sessionStorage.getItem(key());
   if(id){run={id,status:"pending"};void refreshRun().then(()=>{if(active()){void connect();timer=setInterval(refreshRun,1500);}});}
@@ -80,7 +82,8 @@
    {#if tools.length}<details><summary>工具记录（{tools.length}）</summary>{#each tools as tool}<p>{tool.tool} · {tool.summary||tool.status}</p>{/each}</details>{/if}
    {#if !active()}<button onclick={nextQuestion}>继续追问</button>{/if}
   {/if}
-  <form class="stack" onsubmit={(e)=>{e.preventDefault();start();}}>
+  {#if mode==="chat"}<div class="fields"><label>本次对话的模型连接<select disabled={active()} bind:value={providerID} onchange={()=>{modelID=providers.find(p=>p.id===providerID)?.model||"";modelOptions=[];}}><option value="">使用知识库默认配置</option>{#each providers as p}<option value={p.id}>{p.name}</option>{/each}</select></label>{#if providerID}<label>模型 ID<input disabled={active()} bind:value={modelID} list="chat-model-options" /><datalist id="chat-model-options">{#each modelOptions as m}<option value={m}></option>{/each}</datalist></label><button type="button" disabled={active()} onclick={()=>api(`/ai/providers/${providerID}/models`,"POST").then(data=>modelOptions=data.models).catch(e=>error=e.message)}>获取模型</button>{/if}</div>{/if}
+ <form class="stack" onsubmit={(e)=>{e.preventDefault();start();}}>
    <label>消息<textarea rows="4" bind:value={prompt} placeholder="例如：把我的笔记整理到 Wiki，并说明更新了什么。"></textarea></label>
    <div class="row"><button class="primary" disabled={busy||!!active()||!prompt.trim()}>发送</button>
    <button type="button" disabled={!!active()} onclick={()=>{messages=[];answer="";answerHTML="";run=null;}}>新对话</button></div>

@@ -23,8 +23,10 @@ const (
 var errWikiAgentConcurrencyLimit = errors.New("wiki agent concurrency limit reached")
 
 type adminWikiChatRequest struct {
-	Message string            `json:"message"`
-	History []wikiChatMessage `json:"history"`
+	ProviderID string            `json:"provider_id,omitempty"`
+	Model      string            `json:"model,omitempty"`
+	Message    string            `json:"message"`
+	History    []wikiChatMessage `json:"history"`
 }
 
 type wikiAgentRun struct {
@@ -83,11 +85,11 @@ func (s *Server) adminWikiAPIChat(w http.ResponseWriter, r *http.Request) {
 		writeAdminErrorFields(w, http.StatusBadRequest, "validation_failed", "消息不能为空。", map[string]string{"message": "消息不能为空。"})
 		return
 	}
-	if !s.wikiReady() {
+	if request.ProviderID == "" && !s.wikiReady() {
 		writeAdminError(w, http.StatusServiceUnavailable, "wiki_unavailable", "Wiki Agent LLM 尚未配置完成。")
 		return
 	}
-	run, err := s.startWikiAgentRunWithKind("chat", message, request.History)
+	run, err := s.startSelectedWikiChat(request.ProviderID, request.Model, message, request.History)
 	if err != nil {
 		writeWikiAgentStartError(w, err)
 		return
@@ -106,7 +108,7 @@ func (s *Server) adminWikiAPIChatStream(w http.ResponseWriter, r *http.Request) 
 		writeAdminErrorFields(w, http.StatusBadRequest, "validation_failed", "消息不能为空。", map[string]string{"message": "消息不能为空。"})
 		return
 	}
-	if !s.wikiReady() {
+	if request.ProviderID == "" && !s.wikiReady() {
 		writeAdminError(w, http.StatusServiceUnavailable, "wiki_unavailable", "Wiki Agent LLM 尚未配置完成。")
 		return
 	}
@@ -115,7 +117,7 @@ func (s *Server) adminWikiAPIChatStream(w http.ResponseWriter, r *http.Request) 
 		writeAdminError(w, http.StatusInternalServerError, "stream_unsupported", "当前连接不支持 SSE。")
 		return
 	}
-	run, err := s.startWikiAgentRunWithKind("chat", message, request.History)
+	run, err := s.startSelectedWikiChat(request.ProviderID, request.Model, message, request.History)
 	if err != nil {
 		writeWikiAgentStartError(w, err)
 		return
@@ -299,6 +301,13 @@ func (s *Server) handleWikiAgentEvent(runID string, event agent.Event) {
 }
 
 func (s *Server) newWikiAgentRunner(ctx context.Context) (agent.Runner, error) {
+	p, version, err := s.selectedAI()
+	if err != nil {
+		return nil, err
+	}
+	if version != "environment" {
+		return s.configuredAIRunner(ctx, p, version, false)
+	}
 	if s.wikiAgentRunner != nil {
 		return s.wikiAgentRunner, nil
 	}
@@ -320,6 +329,13 @@ func (s *Server) newWikiAgentRunner(ctx context.Context) (agent.Runner, error) {
 // Wiki Ask runs. It has no write tool and no wiki write lock, which is the
 // code-level boundary that prevents external API clients from modifying the Wiki.
 func (s *Server) newReadOnlyWikiAgentRunner(ctx context.Context) (agent.Runner, error) {
+	p, version, err := s.selectedAI()
+	if err != nil {
+		return nil, err
+	}
+	if version != "environment" {
+		return s.configuredAIRunner(ctx, p, version, true)
+	}
 	if s.wikiAgentAskRunner != nil {
 		return s.wikiAgentAskRunner, nil
 	}
@@ -581,4 +597,24 @@ func adminWikiAgentRunResponse(run *wikiAgentRun) *wikiAgentRun {
 		clone.Status = "failed"
 	}
 	return clone
+}
+
+func (s *Server) startSelectedWikiChat(providerID, model, message string, history []wikiChatMessage) (*wikiAgentRun, error) {
+	if providerID == "" {
+		return s.startWikiAgentRunWithKind("chat", message, history)
+	}
+	p, err := s.providerByID(providerID)
+	if err != nil {
+		return nil, err
+	}
+	if model != "" {
+		p.Model = model
+	}
+	if p.Key == "" || p.Model == "" || len(p.Model) > 200 {
+		return nil, errors.New("AI connection requires a key and model")
+	}
+	// Capture configuration before queueing. Never resolve a mutable connection inside the worker.
+	return s.startWikiAgentRun(func(ctx context.Context) (agent.Runner, error) {
+		return agent.New(ctx, agent.Config{Root: s.root, APIKey: p.Key, BaseURL: p.BaseURL, Model: p.Model, HTTPClient: aiHTTPClient(p, 10*time.Minute), WriteLock: &s.wikiWriteMu})
+	}, "chat", message, history)
 }

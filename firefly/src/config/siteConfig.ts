@@ -1,3 +1,4 @@
+import { applyThemeGroup } from "./aigoni-theme";
 import { aigoniSite } from "./aigoni-config";
 import type { SiteConfig } from "@/types/siteConfig";
 import { resolvePageToggles } from "../utils/page-toggle-utils";
@@ -374,3 +375,9 @@ if (aigoniSite) {
  siteConfig.site_url=aigoniSite.base_url;
  siteConfig.timezone=aigoniSite.utc_offset==="Z"?"UTC":aigoniSite.utc_offset;
 }
+
+applyThemeGroup("appearance", siteConfig);
+applyThemeGroup("pages", siteConfig.pages);
+applyThemeGroup("reading", siteConfig.post);
+
+applyThemeGroup("collections",siteConfig);

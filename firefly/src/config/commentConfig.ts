@@ -1,3 +1,4 @@
+import {applyThemeGroup} from "./aigoni-theme";
 import type { CommentConfig } from "../types/commentConfig";
 
 export const commentConfig: CommentConfig = {
@@ -83,3 +84,5 @@ export const commentConfig: CommentConfig = {
 		shortname: "firefly",
 	},
 };
+
+applyThemeGroup("comments",commentConfig);

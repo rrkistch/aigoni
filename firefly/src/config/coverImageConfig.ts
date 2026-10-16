@@ -1,3 +1,4 @@
+import { applyThemeGroup } from "./aigoni-theme";
 import type { CoverImageConfig } from "../types/coverImageConfig";
 
 /**
@@ -38,3 +39,5 @@ export const coverImageConfig: CoverImageConfig = {
 		],
 	},
 };
+
+applyThemeGroup("cover", coverImageConfig);
