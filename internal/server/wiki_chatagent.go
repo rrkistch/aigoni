@@ -237,12 +237,15 @@ func (s *Server) startWikiAgentRun(newRunner func(context.Context) (agent.Runner
 	}
 	s.wikiMu.Lock()
 	s.wikiAgentRuns[run.ID] = run
+	// Capture the pending acknowledgement before the worker can advance it.
+	// Note: docs/decisions/wiki-run-ack.md
+	ack := cloneWikiAgentRun(run)
 	s.wikiMu.Unlock()
 	go func() {
 		defer cancel()
 		s.runWikiAgent(ctx, runner, run.ID, message, history)
 	}()
-	return s.getWikiAgentRun(run.ID), nil
+	return ack, nil
 }
 
 func (s *Server) runWikiAgent(ctx context.Context, runner agent.Runner, runID, message string, history []wikiChatMessage) {

@@ -300,7 +300,7 @@ func validateSettingsConfig(cfg *config.Config, allowedExts []string) map[string
 }
 
 func safeRelativePath(path string) bool {
-	if path == "" || filepath.IsAbs(path) || filepath.Clean(path) != path {
+	if path == "" || strings.HasPrefix(path, "/") || strings.HasPrefix(path, "\\") || filepath.IsAbs(path) || filepath.VolumeName(path) != "" || filepath.ToSlash(filepath.Clean(path)) != filepath.ToSlash(path) {
 		return false
 	}
 	return path != "." && !strings.HasPrefix(path, ".."+string(filepath.Separator)) && path != ".."
