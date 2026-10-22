@@ -6,9 +6,16 @@ import {createReadStream} from 'node:fs';
 const {THEME_VERSION:version,SOURCE_COMMIT:commit}=process.env;
 if(process.platform!=='linux'||process.arch!=='x64'||!/^theme-v\d+\.\d+\.\d+$/.test(version||'')||!/^[a-f0-9]{40}$/.test(commit||'')||Number(process.versions.node.split('.')[0])!==24)throw new Error('Invalid theme release environment');
 const root='/bundle',source=path.join(root,'source');
-for(const name of ['dist','.astro','.aigoni','.vercel','.wrangler'])await fs.rm(path.join(source,name),{recursive:true,force:true});
+// Installed dependencies are authoritative. pnpm 11's timestamp/path checks must not reinstall them.
+await fs.appendFile(path.join(source,'pnpm-workspace.yaml'),'\n# Release bundle: dependencies are preinstalled and verified after relocation.\nverifyDepsBeforeRun: false\n');
+const relocated=path.join(root,'relocated-source');
+await fs.rename(source,relocated);
+execFileSync(process.execPath,[path.join(relocated,'scripts/aigoni-build.mjs'),path.join(relocated,'tests/fixtures/public-snapshot.json'),path.join(root,'relocation-check')],{cwd:relocated,stdio:'inherit',env:{...process.env,ASTRO_TELEMETRY_DISABLED:'1'}});
+await fs.rename(relocated,source);
+
+for(const name of ['dist','.astro','.aigoni','.vercel','.wrangler','node_modules/.astro','node_modules/.cache'])await fs.rm(path.join(source,name),{recursive:true,force:true});
 await fs.copyFile(path.join(root,'firefly-upstream.json'),path.join(source,'aigoni-upstream.json'));
-const manifest={format:1,version,source_commit:commit,os:'linux',arch:'amd64',node_major:24,pnpm:'11.22.0',admin_api:1,settings:1};
+const manifest={format:1,dependencies:'bundled-portable-v1',version,source_commit:commit,os:'linux',arch:'amd64',node_major:24,pnpm:'11.22.0',admin_api:1,settings:1};
 await fs.writeFile(path.join(root,'manifest.json'),JSON.stringify(manifest,null,2));
 await fs.mkdir('/out',{recursive:true});
 const name=`aigoni-${version}-linux-amd64.tar.gz`,file=path.join('/out',name);

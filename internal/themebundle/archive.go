@@ -26,6 +26,7 @@ var TagPattern = regexp.MustCompile(`^theme-v[0-9]+\.[0-9]+\.[0-9]+$`)
 var commitPattern = regexp.MustCompile(`^[a-f0-9]{40}$`)
 
 type Manifest struct {
+	Dependencies string `json:"dependencies"`
 	Format       int    `json:"format"`
 	Version      string `json:"version"`
 	SourceCommit string `json:"source_commit"`
@@ -38,7 +39,7 @@ type Manifest struct {
 }
 
 func (m Manifest) Validate(tag string) error {
-	if !TagPattern.MatchString(tag) || m.Version != tag || m.Format != 1 || !commitPattern.MatchString(m.SourceCommit) || m.OS != "linux" || m.Arch != "amd64" || m.NodeMajor != 24 || m.PNPM != PNPM || m.AdminAPI != 1 || m.Settings != 1 {
+	if !TagPattern.MatchString(tag) || m.Version != tag || m.Format != 1 || m.Dependencies != "bundled-portable-v1" || !commitPattern.MatchString(m.SourceCommit) || m.OS != "linux" || m.Arch != "amd64" || m.NodeMajor != 24 || m.PNPM != PNPM || m.AdminAPI != 1 || m.Settings != 1 {
 		return errors.New("主题包格式或运行环境不兼容（需要 Linux amd64 / Node 24 / 当前配置接口）")
 	}
 	return nil

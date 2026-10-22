@@ -22,7 +22,7 @@ func testArchive(t *testing.T, extra *tar.Header) string {
 	}
 	gz := gzip.NewWriter(file)
 	tr := tar.NewWriter(gz)
-	manifest := Manifest{Format: 1, Version: "theme-v1.0.0", SourceCommit: strings.Repeat("a", 40), OS: "linux", Arch: "amd64", NodeMajor: 24, PNPM: PNPM, AdminAPI: 1, Settings: 1}
+	manifest := Manifest{Format: 1, Dependencies: "bundled-portable-v1", Version: "theme-v1.0.0", SourceCommit: strings.Repeat("a", 40), OS: "linux", Arch: "amd64", NodeMajor: 24, PNPM: PNPM, AdminAPI: 1, Settings: 1}
 	data, _ := json.Marshal(manifest)
 	entries := map[string][]byte{"manifest.json": data}
 	for _, name := range []string{"package.json", "pnpm-lock.yaml", "scripts/aigoni-build.mjs", "aigoni-defaults.json", "aigoni-settings-schema.json", "node_modules/astro/package.json"} {

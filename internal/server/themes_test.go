@@ -20,7 +20,7 @@ func installedTheme(t *testing.T, s *Server, version string) {
 	s.themeInstallMu.Lock()
 	defer s.themeInstallMu.Unlock()
 	dir := filepath.Join(s.themesRoot(), "versions", version)
-	m := themebundle.Manifest{Version: version, Format: 1, SourceCommit: strings.Repeat("a", 40), OS: "linux", Arch: "amd64", NodeMajor: 24, PNPM: themebundle.PNPM, AdminAPI: 1, Settings: 1}
+	m := themebundle.Manifest{Version: version, Format: 1, Dependencies: "bundled-portable-v1", SourceCommit: strings.Repeat("a", 40), OS: "linux", Arch: "amd64", NodeMajor: 24, PNPM: themebundle.PNPM, AdminAPI: 1, Settings: 1}
 	b, _ := json.Marshal(themeUpload{Tag: version, Manifest: &m})
 	writeFile(t, filepath.Join(dir, "installation.json"), string(b))
 	writeFile(t, filepath.Join(dir, "source/scripts/aigoni-build.mjs"), "// fixture")
