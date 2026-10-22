@@ -16,6 +16,7 @@ import (
 )
 
 type Server struct {
+	integrationMu      sync.Mutex
 	themeInstallMu     sync.Mutex
 	themeInstallCancel context.CancelFunc
 	maintenanceMu      sync.RWMutex

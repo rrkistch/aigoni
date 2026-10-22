@@ -11,7 +11,232 @@ tags:
   - name: Public REST
   - name: Machine API
   - name: Admin API
+  - name: MCP
 paths:
+  /api/admin/v1/integrations:
+    get:
+      tags: [Admin API]
+      summary: "读取助手凭据元数据、范围和Hermes配置模板；不回显摘要或凭据"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200": {description: Operation result}
+        "201": {description: Credential created; token appears only once}
+        "400": {description: Invalid input}
+        "401": {description: Admin login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Stale revision, revoked authority or processed approval}
+        "503": {description: Result persistence failed; query original request before retry}
+    post:
+      tags: [Admin API]
+      summary: "创建专用凭据，仅本次返回token；需要revision、name、endpoint、scopes"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        "200": {description: Operation result}
+        "201": {description: Credential created; token appears only once}
+        "400": {description: Invalid input}
+        "401": {description: Admin login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Stale revision, revoked authority or processed approval}
+        "503": {description: Result persistence failed; query original request before retry}
+  /api/admin/v1/integrations/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: {type: string}
+    delete:
+      tags: [Admin API]
+      summary: "撤销专用凭据，需当前配置revision；不赋予旧机器key新增权限"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        "200": {description: Operation result}
+        "201": {description: Credential created; token appears only once}
+        "400": {description: Invalid input}
+        "401": {description: Admin login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Stale revision, revoked authority or processed approval}
+        "503": {description: Result persistence failed; query original request before retry}
+  /api/admin/v1/integrations/test:
+    post:
+      tags: [Admin API]
+      summary: "需要token；检查本应用内MCP凭据与初始化，不调用模型、不检查远端网络"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        "200": {description: Operation result}
+        "201": {description: Credential created; token appears only once}
+        "400": {description: Invalid input}
+        "401": {description: Admin login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Stale revision, revoked authority or processed approval}
+        "503": {description: Result persistence failed; query original request before retry}
+  /api/admin/v1/approvals:
+    get:
+      tags: [Admin API]
+      summary: "读取最多100个待处理候选摘要"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200": {description: Operation result}
+        "201": {description: Credential created; token appears only once}
+        "400": {description: Invalid input}
+        "401": {description: Admin login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Stale revision, revoked authority or processed approval}
+        "503": {description: Result persistence failed; query original request before retry}
+  /api/admin/v1/approvals/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: {type: string}
+    get:
+      tags: [Admin API]
+      summary: "读取具体候选差异、绑定版本及实际发布状态"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200": {description: Operation result}
+        "201": {description: Credential created; token appears only once}
+        "400": {description: Invalid input}
+        "401": {description: Admin login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Stale revision, revoked authority or processed approval}
+        "503": {description: Result persistence failed; query original request before retry}
+  /api/admin/v1/approvals/{id}/approve:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: {type: string}
+    post:
+      tags: [Admin API]
+      summary: "需要审批revision；目标变化则409；重复批准不重复写入"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        "200": {description: Operation result}
+        "201": {description: Credential created; token appears only once}
+        "400": {description: Invalid input}
+        "401": {description: Admin login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Stale revision, revoked authority or processed approval}
+        "503": {description: Result persistence failed; query original request before retry}
+  /api/admin/v1/approvals/{id}/reject:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: {type: string}
+    post:
+      tags: [Admin API]
+      summary: "需要审批revision，可附reason；不修改网站内容"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        "200": {description: Operation result}
+        "201": {description: Credential created; token appears only once}
+        "400": {description: Invalid input}
+        "401": {description: Admin login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Stale revision, revoked authority or processed approval}
+        "503": {description: Result persistence failed; query original request before retry}
+  /api/admin/v1/audit:
+    get:
+      tags: [Admin API]
+      summary: "读取最近100个私有操作摘要；不进入公开快照或数据备份"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200": {description: Operation result}
+        "201": {description: Credential created; token appears only once}
+        "400": {description: Invalid input}
+        "401": {description: Admin login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Stale revision, revoked authority or processed approval}
+        "503": {description: Result persistence failed; query original request before retry}
+  /mcp:
+    post:
+      tags: [MCP]
+      summary: Stateless Streamable HTTP MCP; dedicated credential-bound authority, JSON responses
+      security:
+        - MCPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [jsonrpc, method]
+              properties:
+                jsonrpc: {const: "2.0"}
+                method: {type: string}
+                params: {type: object}
+                id: {}
+      responses:
+        "200": {description: JSON-RPC result; business errors use tool isError and error code/message}
+        "202": {description: Notification accepted}
+        "401": {description: Dedicated Bearer credential required; cookies and legacy machine keys do not grant MCP authority}
+        "403": {description: Cross-origin request rejected}
+        "413": {description: Request exceeds 2 MiB}
+    get:
+      tags: [MCP]
+      summary: Sessionless transport has no standalone GET stream
+      security:
+        - MCPBearer: []
+      responses:
+        "405": {description: Not supported after authentication}
+        "401": {description: Dedicated credential required}
+    delete:
+      tags: [MCP]
+      summary: No persistent transport session to delete
+      security:
+        - MCPBearer: []
+      responses:
+        "405": {description: Not supported after authentication}
+        "401": {description: Dedicated credential required}
   /api/admin/v1/theme:
     get:
       tags: [Admin API]
@@ -1806,6 +2031,10 @@ paths:
         '503': {$ref: '#/components/responses/Error'}
 components:
   securitySchemes:
+    MCPBearer:
+      type: http
+      scheme: bearer
+      description: One-time-issued dedicated assistant credential, stored only as a digest and bound to its endpoint authority and scopes
     AdminSession:
       type: apiKey
       in: cookie

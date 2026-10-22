@@ -8,7 +8,7 @@ Firefly 源码位于项目的 firefly 目录；aigoni 原来的 frontend/web 和
 
 ## 首次运行
 
-服务器需要 Go 1.22+（构建 aigoni）、Node.js 22.23+ 和 pnpm。Firefly 依赖以 pnpm-lock.yaml 为准。
+服务器需要 Go 1.25+（构建 aigoni）、Node.js 22.23+ 和 pnpm。Firefly 依赖以 pnpm-lock.yaml 为准。
 
 1. 在 firefly 目录执行 pnpm install --frozen-lockfile。
 2. 在项目根目录按原有方式配置 .env，设置管理员密码及可选的 Wiki 模型参数。

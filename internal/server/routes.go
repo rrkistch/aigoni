@@ -21,6 +21,10 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /rest/v1/search", s.restSearch)
 
 	s.registerAdminAPIRoutes(mux)
+	mcpHandler := s.mcpHTTPHandler()
+	for _, method := range []string{"GET", "POST", "DELETE", "OPTIONS"} {
+		mux.Handle(method+" /mcp", mcpHandler)
+	}
 	mux.HandleFunc("GET /login", s.adminFrontend)
 	mux.HandleFunc("GET "+s.adminURL("maintenance"), s.maintenancePage)
 	adminPath := s.adminPath()

@@ -15,6 +15,15 @@ func (s *Server) registerAdminAPIRoutes(mux *http.ServeMux) {
 	auth := func(pattern string, handler http.HandlerFunc) {
 		mux.Handle(pattern, s.requireAdminAPIAuth(handler))
 	}
+	auth("GET "+adminAPIBasePath+"/integrations", s.integrationsAPI)
+	auth("POST "+adminAPIBasePath+"/integrations", s.integrationsAPI)
+	auth("DELETE "+adminAPIBasePath+"/integrations/{id}", s.integrationsAPI)
+	auth("POST "+adminAPIBasePath+"/integrations/test", s.integrationTestAPI)
+	auth("GET "+adminAPIBasePath+"/approvals", s.approvalsAPI)
+	auth("GET "+adminAPIBasePath+"/approvals/{id}", s.approvalsAPI)
+	auth("POST "+adminAPIBasePath+"/approvals/{id}/approve", s.approvalsAPI)
+	auth("POST "+adminAPIBasePath+"/approvals/{id}/reject", s.approvalsAPI)
+	auth("GET "+adminAPIBasePath+"/audit", s.auditAPI)
 	auth("GET "+adminAPIBasePath+"/dashboard", s.adminAPIDashboard)
 	auth("GET "+adminAPIBasePath+"/theme", s.themeAPI)
 	auth("POST "+adminAPIBasePath+"/theme/uploads", s.themeUploadAPI)

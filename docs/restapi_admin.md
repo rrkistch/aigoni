@@ -852,3 +852,20 @@
 - `POST /api/admin/v1/theme/cancel`：取消待切换主题并重新排队当前主题构建。
 
 主题上传与校验不会启用主题。启用、回退返回202仅表示排队；须轮询 GET /theme 或 site-build，确认 theme 与 published_revision。包内声明不是信任来源；固定仓库 GitHub Release 的文件摘要和大小必须匹配。不提供自定义来源绕过校验。
+
+
+## 助手与审批
+
+管理员接口仍要求Session，写请求要求CSRF；`/mcp`只接受专用Bearer凭据，不使用Cookie或旧机器key。
+
+- `GET /api/admin/v1/integrations`：读取助手凭据元数据、范围和Hermes配置模板；不回显摘要或凭据。
+- `POST /api/admin/v1/integrations`：创建专用凭据，仅本次返回token；需要revision、name、endpoint、scopes。
+- `DELETE /api/admin/v1/integrations/{id}`：撤销专用凭据，需当前配置revision；不赋予旧机器key新增权限。
+- `POST /api/admin/v1/integrations/test`：需要token；检查本应用内MCP凭据与初始化，不调用模型、不检查远端网络。
+- `GET /api/admin/v1/approvals`：读取最多100个待处理候选摘要。
+- `GET /api/admin/v1/approvals/{id}`：读取具体候选差异、绑定版本及实际发布状态。
+- `POST /api/admin/v1/approvals/{id}/approve`：需要审批revision；目标变化则409；重复批准不重复写入。
+- `POST /api/admin/v1/approvals/{id}/reject`：需要审批revision，可附reason；不修改网站内容。
+- `GET /api/admin/v1/audit`：读取最近100个私有操作摘要；不进入公开快照或数据备份。
+
+工具写请求须带稳定request_id；相同标识不同参数拒绝，applying中断状态不重放。公开变更批准后仍须查询publication_status；仅published表示具体候选在当前公开版本中，superseded表示内容已被后续更新取代。配置审批同时绑定值、版本及主题。连接检查不代表Hermes网络已打通。完整配置与权限见 [Hermes指南](hermes.md)。源码构建需Go1.25+，Docker使用Go1.26。

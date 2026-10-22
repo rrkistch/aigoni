@@ -28,7 +28,7 @@ const image=process.env.AIGONI_TEST_IMAGE||'aigoni-firefly:theme-smoke';
   assert.ok((await(await request('/posts/theme-migration-smoke/','GET',undefined,false,false)).text()).includes('CURRENT_THEME_SMOKE_CONTENT'));
   assert.equal(await docker('exec',name,'node','-e',"console.log(require('fs').existsSync('/data/.aigoni-admin/themes/versions/"+tag+"/source/.aigoni'))"),'false');console.log('PASS verified package install, immutable source, atomic activation');
   const settings=await json('/api/admin/v1/theme-settings');await json('/api/admin/v1/theme-settings','PATCH',{revision:settings.revision,groups:{appearance:{themeColor:{hue:225}}}});
-  const current=await json('/api/admin/v1/posts/'+post.id);await json('/api/admin/v1/posts/'+post.id,'PATCH',{...current,revision:current.revision,body:'LATEST_CONTENT_ON_THEME_ROLLBACK'});
+  const current=await json('/api/admin/v1/posts/'+post.id);await json('/api/admin/v1/posts/'+post.id,'PATCH',{revision:current.revision,body:'LATEST_CONTENT_ON_THEME_ROLLBACK'});
   await json('/api/admin/v1/theme/rollback','POST',{});state=await published(state.published_revision,'source');
   assert.ok((await(await request('/posts/theme-migration-smoke/','GET',undefined,false,false)).text()).includes('LATEST_CONTENT_ON_THEME_ROLLBACK'));
   assert.equal((await json('/api/admin/v1/theme-settings')).groups.appearance.themeColor.hue,225);console.log('PASS settings + article changes and rollback rebuild current data');

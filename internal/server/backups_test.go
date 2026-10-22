@@ -113,6 +113,10 @@ func TestBackupAPIPrivateRoundTripAndConflict(t *testing.T) {
 		t.Fatal(w.Code, w.Body.String())
 	}
 	restored := wait(upload.ID, "restored")
+	restoredTheme, e := s.readThemeSettings()
+	if e != nil || restoredTheme.Revision == 0 {
+		t.Fatal("restore rewound configuration revision", e)
+	}
 	if restored.SafetyBackup == "" {
 		t.Fatal("missing safety backup")
 	}

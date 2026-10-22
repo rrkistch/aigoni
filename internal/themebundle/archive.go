@@ -40,7 +40,7 @@ type Manifest struct {
 }
 
 func (m Manifest) Validate(tag string) error {
-	if !TagPattern.MatchString(tag) || m.Version != tag || m.Format != 1 || m.Dependencies != "bundled-portable-v1" || m.Assets != "original-fonts-v1" || !commitPattern.MatchString(m.SourceCommit) || m.OS != "linux" || m.Arch != "amd64" || m.NodeMajor != 24 || m.PNPM != PNPM || m.AdminAPI != 1 || m.Settings != 1 {
+	if !TagPattern.MatchString(tag) || m.Version != tag || m.Format != 1 || m.Dependencies != "bundled-portable-v1" || m.Assets != "original-fonts-v1" || !commitPattern.MatchString(m.SourceCommit) || m.OS != "linux" || m.Arch != "amd64" || m.NodeMajor != 24 || m.PNPM != PNPM || (m.AdminAPI < 1 || m.AdminAPI > 2) || m.Settings != 1 {
 		return errors.New("主题包格式或运行环境不兼容（需要 Linux amd64 / Node 24 / 当前配置接口）")
 	}
 	return nil

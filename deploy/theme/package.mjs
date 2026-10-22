@@ -19,7 +19,7 @@ await fs.rename(fontCache,savedFonts);
 for(const name of ['dist','.astro','.aigoni','.vercel','.wrangler','node_modules/.astro','node_modules/.cache'])await fs.rm(path.join(source,name),{recursive:true,force:true});
 await fs.mkdir(path.dirname(fontCache),{recursive:true});await fs.rename(savedFonts,fontCache);
 await fs.copyFile(path.join(root,'firefly-upstream.json'),path.join(source,'aigoni-upstream.json'));
-const manifest={format:1,dependencies:'bundled-portable-v1',assets:'original-fonts-v1',version,source_commit:commit,os:'linux',arch:'amd64',node_major:24,pnpm:'11.22.0',admin_api:1,settings:1};
+const manifest={format:1,dependencies:'bundled-portable-v1',assets:'original-fonts-v1',version,source_commit:commit,os:'linux',arch:'amd64',node_major:24,pnpm:'11.22.0',admin_api:2,settings:1};
 await fs.writeFile(path.join(root,'manifest.json'),JSON.stringify(manifest,null,2));
 await fs.mkdir('/out',{recursive:true});
 const name=`aigoni-${version}-linux-amd64.tar.gz`,file=path.join('/out',name);

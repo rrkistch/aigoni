@@ -480,7 +480,15 @@ func (s *Server) backupRestoreAPI(w http.ResponseWriter, r *http.Request) {
 		s.themeMu.Lock()
 		s.mediaMu.Lock()
 		s.onboardingMu.Lock()
-		err = sitebackup.Restore(s.root, filepath.Join(work, "stage"), targets, *state.Manifest)
+		restoreManifest := *state.Manifest
+		restoreManifest.Roots = map[string]bool{}
+		for key, value := range state.Manifest.Roots {
+			restoreManifest.Roots[key] = value
+		}
+		err = s.advanceRestoredConfigRevisions(filepath.Join(work, "stage"), &restoreManifest)
+		if err == nil {
+			err = sitebackup.Restore(s.root, filepath.Join(work, "stage"), targets, restoreManifest)
+		}
 		var cleanup *sitebackup.CleanupError
 		restored := err == nil || errors.As(err, &cleanup)
 		if restored {

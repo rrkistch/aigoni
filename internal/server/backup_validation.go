@@ -124,3 +124,56 @@ func (s *Server) validateBackupData(stage string, manifest sitebackup.Manifest) 
 	}
 	return nil
 }
+
+// Call with themeMu/onboardingMu held. Restore is also a configuration write: revisions cannot rewind.
+func (s *Server) advanceRestoredConfigRevisions(stage string, manifest *sitebackup.Manifest) error {
+	current, err := s.readThemeSettings()
+	if err != nil {
+		return err
+	}
+	restored, err := configdoc.Read(filepath.Join(stage, "theme"), map[string]any{})
+	if err != nil {
+		return err
+	}
+	max := current.Revision
+	if restored.Revision > max {
+		max = restored.Revision
+	}
+	if max == ^uint64(0) {
+		return errors.New("外观配置版本已超出支持范围")
+	}
+	restored.Revision = max + 1
+	data, err := json.Marshal(restored)
+	if err != nil {
+		return err
+	}
+	if err = configdoc.Atomic(filepath.Join(stage, "theme"), data); err != nil {
+		return err
+	}
+	manifest.Roots["theme"] = true
+	setup, err := s.readOnboarding()
+	if err != nil {
+		return err
+	}
+	oldSetup, err := configdoc.Read(filepath.Join(stage, "onboarding"), onboardingSettings{})
+	if err != nil {
+		return err
+	}
+	max = setup.Revision
+	if oldSetup.Revision > max {
+		max = oldSetup.Revision
+	}
+	if max == ^uint64(0) {
+		return errors.New("引导配置版本已超出支持范围")
+	}
+	oldSetup.Revision = max + 1
+	data, err = json.Marshal(oldSetup)
+	if err != nil {
+		return err
+	}
+	if err = configdoc.Atomic(filepath.Join(stage, "onboarding"), data); err != nil {
+		return err
+	}
+	manifest.Roots["onboarding"] = true
+	return nil
+}

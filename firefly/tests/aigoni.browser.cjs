@@ -7,6 +7,8 @@ const defaults=JSON.parse(fs.readFileSync(path.resolve("aigoni-defaults.json"),"
 let themeRevision=0,themeGroups={};
 let setupState={revision:0,step:0,completed:false,sample_mode:"",imported:false,suggested:false,samples:["示例动态、项目和关于页"]};
 let siteSettings={site:{name:"Aigoni",author:"作者",description:"个人博客",base_url:"https://example.com",logo:"",author_avatar:"",utc_offset:"+08:00"},pagination:{posts_per_page:10,home_posts_count:10},paths:{}};
+let integrations={revision:0,items:[],default_scopes:["public.read","drafts.write","public.propose","theme.propose"],scopes:{"public.read":"查询公开内容与发布状态","drafts.write":"创建、读取和编辑草稿","public.propose":"公开变更需要批准","theme.propose":"外观修改需要批准","notes.read":"读取私人笔记和收藏","wiki.read":"只读Wiki"}};
+let approval={id:"approval-fixture",title:"Hermes 候选标题",actor:"Hermes",kind:"public",status:"pending",revision:1,created:"2026-10-22T00:00:00Z"};let approvals=[approval];let assistantAudit=[];
 let backupItems=[];
 let themeInstall={upload:null,current:"",previous:"",pending:"",build:{status:"published"},supported:true,platform:"linux/amd64",repository:"https://github.com/rrkistch/aigoni",maintenance_url:"/studio/maintenance"};
 let aiState={revision:0,default_provider:"",source:"environment",providers:[]};
@@ -47,6 +49,15 @@ const evidence=path.resolve(process.env.FIREFLY_TEST_EVIDENCE||"../.firefly/evid
     if(method==="PATCH"){const body=req.postDataJSON();assert.equal(body.revision,themeRevision);Object.assign(themeGroups,body.groups);themeRevision++;}
     data={revision:themeRevision,groups:themeGroups,effective:{...defaults,...themeGroups},defaults,schema,saved:true,build_status:"queued"};
    }
+   else if(p==="/integrations"){
+    if(method==="POST"){const input=req.postDataJSON();assert.equal(input.revision,integrations.revision);assert.ok(!input.scopes.includes("notes.read"));integrations={...integrations,revision:1,items:[{id:"hermes-fixture",name:input.name,endpoint:input.endpoint,scopes:input.scopes,created:new Date().toISOString(),revoked:false}]};data={credential:integrations.items[0],token:"fixture-only-one-time-token",config:"mcp_servers:\n  aigoni:\n    url: "+input.endpoint+"\n    headers:\n      Authorization: Bearer ${AIGONI_MCP_TOKEN}\n"};}
+    else data=integrations;
+   }
+   else if(p==="/integrations/test")data={ok:true,message:"协议和凭据检查通过。",scope:"只检查本应用"};
+   else if(p==="/approvals")data={items:approvals};
+   else if(p==="/audit")data={items:assistantAudit};
+   else if(p==="/approvals/approval-fixture")data={operation:approval,before:{title:"原来的标题"},after:{title:"Hermes 候选标题"}};
+   else if(p==="/approvals/approval-fixture/approve"){assert.equal(req.postDataJSON().revision,1);approval={...approval,status:"saved",revision:2,saved:true,public_applied:true,publication_status:"published"};approvals=[];assistantAudit=[approval];data=approval;}
    else if(p==="/theme")data=themeInstall;
    else if(p==="/theme/uploads"&&method==="POST"){const input=req.postDataJSON();assert.equal(input.tag,"theme-v0.1.0");themeInstall.upload={...input,id:"theme-upload-fixture",offset:0,status:"uploading"};data=themeInstall.upload;}
    else if(p==="/theme/uploads/theme-upload-fixture"&&method==="PUT"){themeInstall.upload.offset+=req.postDataBuffer().length;data=themeInstall.upload;}
@@ -184,9 +195,21 @@ const evidence=path.resolve(process.env.FIREFLY_TEST_EVIDENCE||"../.firefly/evid
   await app.getByRole("button",{name:"构建并启用此主题",exact:true}).click();
   await app.getByText("theme-v0.1.0",{exact:true}).waitFor();
   await page.screenshot({path:path.join(evidence,"theme-update-mobile.png")});
+  await app.getByRole("button",{name:"助手与审批",exact:true}).click();
+  await app.getByRole("heading",{name:"助手与审批",exact:true}).waitFor();
+  assert.equal(await app.getByLabel("读取私人笔记和收藏",{exact:true}).isChecked(),false);
+  await app.getByRole("button",{name:"创建专用凭据",exact:true}).click();
+  await app.getByLabel("一次性凭据",{exact:true}).waitFor();assert.equal(await app.getByLabel("一次性凭据",{exact:true}).inputValue(),"fixture-only-one-time-token");
+  await app.getByRole("button",{name:"我已保存，清除此处显示",exact:true}).click();
+  await app.getByRole("button",{name:"查看差异",exact:true}).click();
+  await app.getByRole("heading",{name:"Hermes 候选标题",exact:true}).waitFor();
+  await page.screenshot({path:path.join(evidence,"assistant-approval-mobile.png")});
+  await app.getByRole("button",{name:"批准这个修改",exact:true}).click();
+  await app.getByText("修改已保存。请看下方实际发布状态。",{exact:true}).waitFor();
+  assert.equal(approvals.length,0);
   await app.getByRole("button",{name:"退出",exact:true}).click();
   await app.getByLabel("管理员密码").waitFor();assert.equal(authenticated,false);
   assert.deepEqual(errors,[]);
-  console.log("PASS public search, login, CSRF, create, conflict retention, Wiki, AI stream, responsive themes, AI configuration, theme/music editing, onboarding, maintenance, theme package upload, logout");
+  console.log("PASS public search, login, CSRF, create, conflict retention, Wiki, AI stream, responsive themes, AI configuration, theme/music editing, onboarding, maintenance, theme package upload, Hermes credential and approval, logout");
  }catch(error){const current=browser.contexts()[0]?.pages()[0];if(current){fs.mkdirSync(evidence,{recursive:true});await current.screenshot({path:path.join(evidence,"browser-failure.png")});console.error((await current.locator(".aigoni").innerText()).slice(-5000));}throw error;}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(e=>{console.error(e);process.exit(1);});
