@@ -1,9 +1,11 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 
+	htmltoken "golang.org/x/net/html"
 	"image"
 	_ "image/gif"
 	_ "image/jpeg"
@@ -17,11 +19,12 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"aigoni/internal/config"
 	"aigoni/internal/configdoc"
 )
 
 type mediaItem struct {
+	Revision   uint64   `json:"revision"`
+	ReplacedBy string   `json:"replaced_by,omitempty"`
 	ID         string   `json:"id"`
 	Name       string   `json:"name"`
 	Path       string   `json:"path"`
@@ -219,7 +222,7 @@ func (s *Server) finishMedia(u mediaUpload, part string) (mediaItem, error) {
 	case "lyrics":
 		f.Seek(0, 0)
 		data, e := io.ReadAll(io.LimitReader(f, (1<<20)+1))
-		valid = e == nil && len(data) <= 1<<20 && utf8.Valid(data) && !strings.ContainsRune(string(data), 0)
+		valid = e == nil && len(data) <= 1<<20 && utf8.Valid(data) && !strings.ContainsRune(string(data), 0) && plainMediaText(data)
 	}
 	if !valid {
 		return item, errors.New("文件内容与格式不匹配；不接受 SVG、脚本或伪装的文件。")
@@ -244,52 +247,59 @@ func (s *Server) finishMedia(u mediaUpload, part string) (mediaItem, error) {
 }
 func (s *Server) mediaReferences(asset string) []string {
 	refs := []string{}
-	cfg, _ := s.publicThemeSettings()
-	b, _ := json.Marshal(cfg)
-	if strings.Contains(string(b), asset) {
+	theme, err := s.publicThemeSettings()
+	if err != nil {
+		return []string{"外观设置无法读取，暂不能确认可删除"}
+	}
+	data, _ := json.Marshal(theme)
+	if strings.Contains(string(data), asset) {
 		refs = append(refs, "当前外观或模块设置")
 	}
+	defaults, _ := json.Marshal(s.themeDefaults())
+	if strings.Contains(string(defaults), asset) {
+		refs = append(refs, "当前主题默认素材")
+	}
 	s.settingsMu.Lock()
-	roots := []string{config.Abs(s.root, s.cfg.Paths.PostsDir), config.Abs(s.root, s.cfg.Paths.PagesDir), config.Abs(s.root, s.cfg.Paths.NotesDir)}
+	roots := s.mediaContentRootsLocked()
 	site, _ := json.Marshal(s.cfg.Site)
 	s.settingsMu.Unlock()
 	if strings.Contains(string(site), asset) {
 		refs = append(refs, "站点设置")
 	}
 	s.contentWriteMu.Lock()
-	for _, root := range roots {
-		_ = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
-			if err != nil || d.IsDir() || d.Type()&os.ModeSymlink != 0 {
-				return nil
-			}
-			if filepath.Ext(path) != ".md" {
-				return nil
-			}
-			info, e := d.Info()
-			if e != nil || info.Size() > 2<<20 {
-				return nil
-			}
-			data, e := os.ReadFile(path)
-			if e == nil && strings.Contains(string(data), asset) {
-				rel, _ := filepath.Rel(s.root, path)
-				refs = append(refs, filepath.ToSlash(rel))
-			}
-			return nil
-		})
-	}
+	err = walkMediaReferences(roots, asset, func(file string) error {
+		rel, _ := filepath.Rel(s.root, file)
+		refs = append(refs, filepath.ToSlash(rel))
+		return nil
+	})
 	s.contentWriteMu.Unlock()
-	// Published snapshots keep versioned assets alive until their release is retired.
+	if err != nil {
+		refs = append(refs, "内容引用检查失败，暂不能确认可删除")
+	}
+	refs = append(refs, s.mediaRetainedReferences(asset)...)
 	if s.siteBuild != nil {
 		s.siteBuild.mu.Lock()
 		published := append([]byte(nil), s.siteBuild.published...)
 		s.siteBuild.mu.Unlock()
-		if strings.Contains(string(published), asset) {
+		if bytes.Contains(published, []byte(asset)) {
 			refs = append(refs, "当前公开网站")
 		}
 	}
 	return refs
 }
 func (s *Server) mediaAPI(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "DELETE" {
+		if !s.maintenanceMu.TryLock() {
+			writeAdminError(w, 409, "media_busy", "有内容正在保存，请稍后重试。")
+			return
+		}
+		defer s.maintenanceMu.Unlock()
+		if s.hasWikiTask(true) {
+			writeAdminError(w, 409, "wiki_busy", "请先等待或停止写Wiki任务。")
+			return
+		}
+	}
+
 	s.mediaMu.Lock()
 	defer s.mediaMu.Unlock()
 	files, _ := os.ReadDir(filepath.Join(s.mediaRoot(), "index"))
@@ -313,6 +323,34 @@ func (s *Server) mediaAPI(w http.ResponseWriter, r *http.Request) {
 	for _, item := range items {
 		if item.ID != r.PathValue("id") {
 			continue
+		}
+		if r.Method == "PATCH" {
+			var req struct {
+				Name     string `json:"name"`
+				Revision uint64 `json:"revision"`
+			}
+			if !decodeAdminWikiJSON(w, r, &req, false) {
+				return
+			}
+			req.Name = strings.TrimSpace(req.Name)
+			if req.Revision != item.Revision {
+				writeAdminError(w, 409, "revision_conflict", "素材已变化，请刷新。")
+				return
+			}
+			if req.Name == "" || len(req.Name) > 200 || strings.ContainsAny(req.Name, "\r\n\x00/\\") {
+				writeAdminError(w, 400, "invalid_name", "名称不能为空、不能包含路径，最长200字节。")
+				return
+			}
+			item.Name = req.Name
+			item.Revision++
+			item.References = nil
+			data, _ := json.Marshal(item)
+			if err := configdoc.Atomic(filepath.Join(s.mediaRoot(), "index", item.ID+".json"), data); err != nil {
+				writeAdminError(w, 500, "media_save_failed", "重命名失败。")
+				return
+			}
+			writeAdminJSON(w, 200, item)
+			return
 		}
 		if len(item.References) > 0 {
 			writeAdminError(w, 409, "media_in_use", "素材仍被内容或公开版本引用，请先移除引用并等待发布完成。")
@@ -363,4 +401,17 @@ func validMediaItem(item mediaItem) bool {
 	name := filepath.Base(item.Path)
 	kind, limit := mediaKind(name)
 	return kind != "" && kind == item.Kind && item.Size > 0 && item.Size <= limit && item.Path == "/_media/"+name && strings.TrimSuffix(name, filepath.Ext(name)) == item.ID
+}
+
+func plainMediaText(data []byte) bool {
+	tokens := htmltoken.NewTokenizer(bytes.NewReader(data))
+	for {
+		kind := tokens.Next()
+		if kind == htmltoken.ErrorToken {
+			return tokens.Err() == io.EOF
+		}
+		if kind != htmltoken.TextToken {
+			return false
+		}
+	}
 }

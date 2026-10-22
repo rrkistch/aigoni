@@ -5,6 +5,9 @@
  async function choose(){picker=!picker;mediaError="";if(picker){try{assets=(await api("/media")).items.filter((item:any)=>item.kind===schema.mediaKind);}catch(e){mediaError=(e as Error).message;}}}
  async function upload(e:Event){const file=(e.currentTarget as HTMLInputElement).files?.[0];if(!file)return;uploading=true;mediaError="";try{const item=await uploadMedia(file,()=>{});onchange(item.path);picker=false;}catch(e){mediaError=(e as Error).message;}finally{uploading=false;}}
  let {schema,value,onchange,path="config"}: {schema:any;value:any;onchange:(v:any)=>void;path?:string}=$props();
+ const fontNames:Record<string,string>={system:"系统字体","--font-zen-maru-gothic":"Zen Maru Gothic · 圆润日文字体","--font-inter":"Inter · 清晰无衬线","--font-jetbrains-mono":"JetBrains Mono · 代码等宽","--font-greatvibes":"Great Vibes · 英文手写"};
+ const fontChoice=()=>schema.enum?.some((option:string)=>option.startsWith("--font-"));
+ const fontFamily=()=>value&&value!=="system"&&fontNames[value]?`var(${value}, system-ui)`:"system-ui";
  function empty(s:any):any{return s.type==="object"?{}:s.type==="array"?[]:s.type==="boolean"?false:s.type==="number"?(s.min??0):(s.enum?.[0]??"");}
  function set(key:string,v:any){onchange({...value,[key]:v});}
  function item(index:number,v:any){const next=[...(value||[])];next[index]=v;onchange(next);}
@@ -28,7 +31,8 @@
 {:else if schema.type==="number"}
  <label>{schema.label}<input type="number" min={schema.min} max={schema.max} step={schema.max<=1?0.05:1} value={value??""} oninput={(e)=>{if(e.currentTarget.value!=="")onchange(Number(e.currentTarget.value));}} /></label>
 {:else if schema.enum}
- <label>{schema.label}<select aria-label={schema.label} value={value??""} onchange={(e)=>onchange(e.currentTarget.value)}>{#if value===undefined}<option value="">使用主题默认</option>{/if}{#each schema.enum as option}<option value={option}>{({light:"浅色",dark:"深色",system:"跟随系统",banner:"横幅",fullscreen:"全屏",overlay:"透明覆盖",none:"无",local:"本地列表",meting:"外部歌单",left:"左侧",right:"右侧",both:"双侧",list:"列表循环",one:"单曲循环",random:"随机播放",top:"顶部",sticky:"跟随滚动"} as Record<string,string>)[option]||option||"继承默认"}</option>{/each}</select></label>
+ <label>{schema.label}<select aria-label={schema.label} value={value??""} onchange={(e)=>onchange(e.currentTarget.value)}>{#if value===undefined}<option value="">使用主题默认</option>{/if}{#each schema.enum as option}<option value={option}>{(fontChoice()?(fontNames[option]||"继承全局字体"):({light:"浅色",dark:"深色",system:"跟随系统",banner:"横幅",fullscreen:"全屏",overlay:"透明覆盖",none:"无",local:"本地列表",meting:"外部歌单",left:"左侧",right:"右侧",both:"双侧",list:"列表循环",one:"单曲循环",random:"随机播放",top:"顶部",sticky:"跟随滚动"} as Record<string,string>)[option]||option||"继承默认")}</option>{/each}</select></label>
+ {#if fontChoice()}<p class="font-sample" style:font-family={fontFamily()}>{fontNames[value]||"继承全局字体"}<br />记录生活 Hello Firefly · 0123456789</p>{/if}
 {:else if schema.multiline}
  <label>{schema.label}<textarea rows="4" value={value??""} oninput={(e)=>onchange(e.currentTarget.value)}></textarea></label>
 {:else}
@@ -39,6 +43,7 @@
  {/if}
 {/if}
 <style>
+ .font-sample{font-size:1.1rem;line-height:1.7;padding:.5rem .8rem;border-inline-start:3px solid var(--primary)}
  .config-array{border:0;padding:0;margin:0;min-width:0}.config-array legend{font-weight:650;margin-bottom:.6rem}.config-entry{border-inline-start:3px solid var(--primary);padding:1rem;background:var(--btn-regular-bg);border-radius:var(--radius-large)}
  .media-options{display:flex;flex-wrap:wrap;gap:.75rem}.media-options button{display:flex;flex-direction:column;gap:.5rem;max-width:180px}.media-options img{width:120px;height:70px;object-fit:cover;border-radius:.5rem}
 </style>

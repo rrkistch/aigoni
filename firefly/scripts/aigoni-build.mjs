@@ -9,6 +9,7 @@ const snapshot=JSON.parse(await fs.readFile(input,"utf8"));
 const generation=path.basename(path.resolve(output));
 if(!/^[\w-]+$/.test(generation))throw new Error("Invalid release ID");
 const contentRoot=path.join(root,".aigoni",generation);
+try {
 for(const kind of ["posts","pages","dynamics","projects"]){
  await fs.mkdir(path.join(contentRoot,kind),{recursive:true});
  for(const item of (snapshot[kind]||[])){
@@ -31,3 +32,7 @@ await new Promise((resolve,reject)=>{
 await fs.access(path.join(root,"dist","_workspace","index.html"));
 await fs.cp(path.join(root,"dist"),path.resolve(output),{recursive:true});
 console.log("Firefly release ready:",generation);
+
+} finally {
+ await fs.rm(contentRoot,{recursive:true,force:true});
+}

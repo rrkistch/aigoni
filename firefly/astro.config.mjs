@@ -76,11 +76,11 @@ export default defineConfig({
 	// 字体配置 - 只加载实际使用的字体，跳过未引用的以加快构建
 	fonts: (() => {
 		// 禁用字体功能时直接返回空数组，跳过 Astro Font API 集成
-		if (!fontConfig.enable) return [];
+		if (!fontConfig.enable && !process.env.AIGONI_CONTENT_DIR) return [];
 
 		const used = collectUsedFontCssVars(fontConfig);
 		return fontsList
-			.filter((f) => used.has(f.cssVariable))
+			.filter((f) => process.env.AIGONI_CONTENT_DIR || used.has(f.cssVariable))
 			.map((f) => {
 				let provider;
 				switch (f.provider) {

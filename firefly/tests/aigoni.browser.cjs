@@ -9,6 +9,8 @@ let setupState={revision:0,step:0,completed:false,sample_mode:"",imported:false,
 let siteSettings={site:{name:"Aigoni",author:"作者",description:"个人博客",base_url:"https://example.com",logo:"",author_avatar:"",utc_offset:"+08:00"},pagination:{posts_per_page:10,home_posts_count:10},paths:{}};
 let integrations={revision:0,items:[],default_scopes:["public.read","drafts.write","public.propose","theme.propose"],scopes:{"public.read":"查询公开内容与发布状态","drafts.write":"创建、读取和编辑草稿","public.propose":"公开变更需要批准","theme.propose":"外观修改需要批准","notes.read":"读取私人笔记和收藏","wiki.read":"只读Wiki"}};
 let approval={id:"approval-fixture",title:"Hermes 候选标题",actor:"Hermes",kind:"public",status:"pending",revision:1,created:"2026-10-22T00:00:00Z"};let approvals=[approval];let assistantAudit=[];
+let mediaReplaced=false;
+let mediaItems=[{id:"lyrics-old",name:"歌词旧版.lrc",kind:"lyrics",path:"/_media/lyrics-old.lrc",size:10,revision:0,references:["当前外观或模块设置"]},{id:"lyrics-new",name:"歌词新版.lrc",kind:"lyrics",path:"/_media/lyrics-new.lrc",size:12,revision:0,references:[]}];
 let backupItems=[];
 let themeInstall={upload:null,current:"",previous:"",pending:"",build:{status:"published"},supported:true,platform:"linux/amd64",repository:"https://github.com/rrkistch/aigoni",maintenance_url:"/studio/maintenance"};
 let aiState={revision:0,default_provider:"",source:"environment",providers:[]};
@@ -34,6 +36,7 @@ const evidence=path.resolve(process.env.FIREFLY_TEST_EVIDENCE||"../.firefly/evid
  try {
   const page=await browser.newPage({viewport:{width:1440,height:1000}});
   const app=page.locator(".aigoni");
+  async function navigateWorkspace(label){const button=app.getByRole("button",{name:label,exact:true});if(await button.isVisible())await button.click();else await app.getByLabel("工作区分区",{exact:true}).selectOption({label});}
   let authenticated=false;let revision="r1";let conflict=false;let saved=false;let posts=[];
   const errors=[];page.on("pageerror",e=>errors.push(e.message));
   await page.route("**/api/admin/v1/**",async route=>{
@@ -68,7 +71,10 @@ const evidence=path.resolve(process.env.FIREFLY_TEST_EVIDENCE||"../.firefly/evid
     data={items:backupItems,recovery_required:false,maintenance_url:"/studio/maintenance"};
    }
    else if(p==="/health")data={free_bytes:10*1024**3,checks:[{label:"发布状态",status:"ok",message:"当前版本已上线"}],theme:{version:"6.16.8"},ai_configured:false};
-   else if(p==="/media")data={items:[]};
+   else if(p==="/media")data={items:mediaItems};
+   else if(p==="/media/lyrics-old"&&method==="PATCH"){const input=req.postDataJSON();assert.equal(input.revision,0);mediaItems[0]={...mediaItems[0],name:input.name,revision:1};data=mediaItems[0];}
+   else if(p==="/media/lyrics-old/replace"){const input=req.postDataJSON();assert.equal(input.replacement_id,"lyrics-new");assert.equal(input.revision,1);assert.equal(input.confirm,true);mediaReplaced=true;mediaItems[0]={...mediaItems[0],revision:2,replaced_by:"lyrics-new",references:["可恢复的设置历史"]};data={saved:true,message:"当前引用已替换，旧版本仍保留。"};}
+   else if(p==="/services/comments/test")data={checks:[{label:"评论",status:"configured",message:"评论未启用"}],scope:"只检查已保存配置，不发送留言"};
    else if(p==="/ai/providers"){
     if(method==="PATCH"){const body=req.postDataJSON();aiState={...body,revision:body.revision+1,source:body.default_provider?"backend":"environment",providers:body.providers.map(p=>({...p,id:p.id||"provider-fixture",has_key:true,api_key:undefined}))};}
     data=aiState;
@@ -111,7 +117,7 @@ const evidence=path.resolve(process.env.FIREFLY_TEST_EVIDENCE||"../.firefly/evid
   await app.getByLabel("管理员密码").fill("fixture-only-password");
   await app.getByRole("button",{name:"进入工作区",exact:true}).click();
   await app.getByRole("heading",{name:"私人工作区",exact:true}).waitFor();
-  await app.getByRole("button",{name:"文章",exact:true}).click();
+  await navigateWorkspace("文章");
   await app.getByRole("button",{name:"＋ 新建",exact:true}).click();
   await app.getByLabel("标题",{exact:true}).fill("第一篇文章");
   await app.getByLabel("链接标识").fill("my-first-post");
@@ -122,11 +128,11 @@ const evidence=path.resolve(process.env.FIREFLY_TEST_EVIDENCE||"../.firefly/evid
   await app.getByRole("button",{name:"保存内容",exact:true}).click();
   await app.getByRole("button",{name:"查看服务器版本",exact:true}).waitFor();assert.ok(conflict);
   assert.equal(await app.getByLabel("正文",{exact:true}).inputValue(),"我的修改不能丢");
-  page.on("dialog",d=>d.accept());
-  await app.getByRole("button",{name:"Wiki",exact:true}).click();
+  page.on("dialog",d=>d.type()==="prompt"?d.accept("重命名歌词.lrc"):d.accept());
+  await navigateWorkspace("Wiki");
   await app.getByRole("button",{name:"index.md",exact:true}).click();
   await app.getByRole("heading",{name:"我的知识索引",exact:true}).waitFor();
-  await app.getByRole("button",{name:"AI 对话",exact:true}).click();
+  await navigateWorkspace("AI 对话");
   await app.getByLabel("消息",{exact:true}).fill("整理知识库");
   await app.getByRole("button",{name:"发送",exact:true}).click();
   await app.getByText("模拟回答",{exact:true}).waitFor();
@@ -139,7 +145,7 @@ const evidence=path.resolve(process.env.FIREFLY_TEST_EVIDENCE||"../.firefly/evid
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),"horizontal overflow");
   }
   await page.setViewportSize({width:1440,height:1000});
-  await app.getByRole("button",{name:"AI 服务",exact:true}).click();
+  await navigateWorkspace("AI 服务");
   await app.getByRole("button",{name:"＋ 添加服务",exact:true}).click();
   await app.getByLabel("服务名称",{exact:true}).fill("Mock service");
   await app.getByLabel("API 基础地址",{exact:true}).fill("https://example.invalid/v1");
@@ -151,11 +157,17 @@ const evidence=path.resolve(process.env.FIREFLY_TEST_EVIDENCE||"../.firefly/evid
   await app.getByLabel("知识库默认连接",{exact:true}).selectOption("provider-fixture");
   await app.getByText("默认连接已更新，新任务立即生效；进行中的任务不受影响。",{exact:true}).waitFor();
   await page.screenshot({path:path.join(evidence,"ai-settings.png")});
-  await app.getByRole("button",{name:"外观与模块",exact:true}).click();
+  await navigateWorkspace("外观设置");
   await app.getByLabel("色相",{exact:true}).fill("220");
   await app.getByRole("button",{name:"保存并生成网站",exact:true}).click();
   await app.getByText("设置已保存，请到概览查看网站上线状态。",{exact:true}).waitFor();
   assert.equal(themeGroups.appearance.themeColor.hue,220);
+  await app.getByLabel("选择要管理的区域",{exact:true}).selectOption("fonts");
+  await app.getByLabel(schema.fonts.properties.bannerTitleFont.label,{exact:true}).selectOption("--font-greatvibes");
+  await app.locator(".font-sample").first().waitFor();
+  await page.evaluate(()=>document.fonts.ready);
+  await page.screenshot({path:path.join(evidence,"font-presets.png")});
+  await navigateWorkspace("内容模块");
   await app.getByLabel("选择要管理的区域",{exact:true}).selectOption("music");
   await app.getByLabel("歌名",{exact:true}).first().fill("我的歌曲");
   await app.getByRole("button",{name:"保存并生成网站",exact:true}).click();
@@ -166,7 +178,18 @@ const evidence=path.resolve(process.env.FIREFLY_TEST_EVIDENCE||"../.firefly/evid
    await page.screenshot({path:path.join(evidence,"theme-settings-"+label+".png")});
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),"settings overflow");
   }
-  await app.getByRole("button",{name:"建站引导",exact:true}).click();
+  await navigateWorkspace("素材");
+  await app.getByRole("button",{name:"重命名",exact:true}).first().click();
+  await app.getByText("重命名歌词.lrc",{exact:true}).waitFor();
+  await app.getByRole("button",{name:"替换使用处",exact:true}).first().click();
+  await app.getByLabel("替代素材",{exact:true}).selectOption("lyrics-new");
+  await app.getByRole("button",{name:"确认替换当前引用",exact:true}).click();
+  await app.getByText("当前引用已替换，旧版本仍保留。",{exact:true}).waitFor();assert.equal(mediaReplaced,true);
+  await navigateWorkspace("服务接入");
+  await app.getByLabel("选择要管理的区域",{exact:true}).selectOption("comments");
+  await app.getByRole("button",{name:"检查已保存的连接配置",exact:true}).click();
+  await app.getByText("评论未启用",{exact:true}).waitFor();
+  await navigateWorkspace("建站引导");
   await app.getByLabel("博客名称",{exact:true}).fill("我的博客");
   await app.getByRole("button",{name:"保存并继续",exact:true}).click();
   await app.getByRole("heading",{name:"选择博客需要的页面",exact:true}).waitFor();
@@ -177,7 +200,7 @@ const evidence=path.resolve(process.env.FIREFLY_TEST_EVIDENCE||"../.firefly/evid
   await app.getByRole("button",{name:"完成引导，返回概览",exact:true}).click();
   await app.getByRole("heading",{name:"内容概览",exact:true}).waitFor();
   assert.equal(setupState.completed,true);assert.equal(siteSettings.site.name,"我的博客");
-  await app.getByRole("button",{name:"网站维护",exact:true}).click();
+  await navigateWorkspace("网站维护");
   await app.getByRole("heading",{name:"网站维护",exact:true}).waitFor();
   await app.getByRole("button",{name:"创建数据备份",exact:true}).click();
   await app.getByRole("link",{name:"下载备份",exact:true}).waitFor();
@@ -188,14 +211,14 @@ const evidence=path.resolve(process.env.FIREFLY_TEST_EVIDENCE||"../.firefly/evid
    await page.screenshot({path:path.join(evidence,"maintenance-"+label+".png")});
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),"maintenance overflow");
   }
-  await app.getByRole("button",{name:"主题更新",exact:true}).click();
+  await navigateWorkspace("主题更新");
   await app.getByRole("heading",{name:"主题更新",exact:true}).waitFor();
   await app.getByLabel("选择主题包",{exact:true}).setInputFiles({name:"aigoni-theme-v0.1.0-linux-amd64.tar.gz",mimeType:"application/gzip",buffer:Buffer.from("theme-ui-fixture")});
   await app.getByRole("button",{name:"构建并启用此主题",exact:true}).waitFor();
   await app.getByRole("button",{name:"构建并启用此主题",exact:true}).click();
   await app.getByText("theme-v0.1.0",{exact:true}).waitFor();
   await page.screenshot({path:path.join(evidence,"theme-update-mobile.png")});
-  await app.getByRole("button",{name:"助手与审批",exact:true}).click();
+  await navigateWorkspace("助手与审批");
   await app.getByRole("heading",{name:"助手与审批",exact:true}).waitFor();
   assert.equal(await app.getByLabel("读取私人笔记和收藏",{exact:true}).isChecked(),false);
   await app.getByRole("button",{name:"创建专用凭据",exact:true}).click();
@@ -210,6 +233,6 @@ const evidence=path.resolve(process.env.FIREFLY_TEST_EVIDENCE||"../.firefly/evid
   await app.getByRole("button",{name:"退出",exact:true}).click();
   await app.getByLabel("管理员密码").waitFor();assert.equal(authenticated,false);
   assert.deepEqual(errors,[]);
-  console.log("PASS public search, login, CSRF, create, conflict retention, Wiki, AI stream, responsive themes, AI configuration, theme/music editing, onboarding, maintenance, theme package upload, Hermes credential and approval, logout");
+  console.log("PASS public search, login, CSRF, create, conflict retention, Wiki, AI stream, responsive themes, AI configuration, theme/music editing, onboarding, maintenance, theme package upload, Hermes credential and approval, media replacement, service checks, logout");
  }catch(error){const current=browser.contexts()[0]?.pages()[0];if(current){fs.mkdirSync(evidence,{recursive:true});await current.screenshot({path:path.join(evidence,"browser-failure.png")});console.error((await current.locator(".aigoni").innerText()).slice(-5000));}throw error;}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(e=>{console.error(e);process.exit(1);});

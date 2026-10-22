@@ -17,7 +17,8 @@
  let section=$state("overview");let list=$state<any>({items:[],total:0,total_pages:0});let page=$state(1);let query=$state("");let category=$state("");let tag=$state("");let published=$state("");
  let categories=$state<any[]>([]);let tags=$state<any[]>([]);let editing=$state(false);let itemId=$state("");let dashboard=$state<any>(null);let build=$state<any>(null);
  let request=0;let timer:ReturnType<typeof setInterval>;let disposed=false;
- const tabs=[["overview","概览"],["posts","文章"],["pages","页面"],["dynamics","动态"],["projects","项目"],["notes","笔记与收藏"],["wiki","Wiki"],["chat","AI 对话"],["settings","设置"],["ai-settings","AI 服务"],["appearance","外观与模块"],["media","素材"],["setup","建站引导"],["maintenance","网站维护"],["theme-update","主题更新"],["assistant","助手与审批"]];
+ const tabs=[["overview","概览"],["posts","文章"],["pages","页面"],["dynamics","动态"],["projects","项目"],["notes","笔记与收藏"],["wiki","Wiki"],["chat","AI 对话"],["settings","设置"],["ai-settings","AI 服务"],["appearance","外观设置"],["modules","内容模块"],["services","服务接入"],["media","素材"],["setup","建站引导"],["maintenance","网站维护"],["theme-update","主题更新"],["assistant","助手与审批"]];
+ const navigation=[{label:"内容",ids:["overview","posts","pages","dynamics","projects","modules"]},{label:"装修",ids:["appearance","media","settings"]},{label:"私人知识",ids:["notes","wiki","chat"]},{label:"服务与维护",ids:["ai-settings","services","setup","maintenance","theme-update","assistant"]}];
  const contentSection=()=>["posts","pages","notes","dynamics","projects"].includes(section);
  const title=()=>tabs.find(t=>t[0]===section)?.[1]||"工作区";
  async function refreshStatus(){if(authenticated){[dashboard,build]=await Promise.all([api("/dashboard"),api("/site-build")]);}}
@@ -72,7 +73,7 @@
  </section>
  {:else}
  <header class="card-base panel row spread"><div><p class="muted">只属于你的空间</p><h1>私人工作区</h1></div><div class="row"><a class="button" href="/" data-no-swup>查看博客 ↗</a><button onclick={logout}>退出</button></div></header>
- <nav class="card-base tabs" aria-label="工作区导航">{#each tabs as tab}<button aria-current={section===tab[0]?"page":undefined} onclick={()=>navigate(tab[0])}>{tab[1]}</button>{/each}</nav>
+ <nav class="card-base panel grouped-nav" aria-label="工作区导航"><label class="mobile-section">工作区分区<select aria-label="工作区分区" value={section} onchange={(event)=>navigate(event.currentTarget.value)}>{#each navigation as group}<optgroup label={group.label}>{#each group.ids as id}<option value={id}>{tabs.find(tab=>tab[0]===id)?.[1]}</option>{/each}</optgroup>{/each}</select></label><div class="desktop-sections">{#each navigation as group}<div class="tab-group"><span class="muted">{group.label}</span><div class="tab-buttons">{#each group.ids as id}<button aria-current={section===id?"page":undefined} onclick={()=>navigate(id)}>{tabs.find(tab=>tab[0]===id)?.[1]}</button>{/each}</div></div>{/each}</div></nav>
  {#if error}<div class="notice error" role="alert">{error}</div>{/if}
  {#if section==="overview"}
   <section class="card-base panel stack"><h2>内容概览</h2>
@@ -107,7 +108,7 @@
   {#key section}<Knowledge mode={section} />{/key}
  {:else if section==="settings"}<Settings />
  {:else if section==="ai-settings"}<AISettings />
- {:else if section==="appearance"}<ThemeSettings />
+ {:else if ["appearance","modules","services"].includes(section)}{#key section}<ThemeSettings section={section as "appearance"|"modules"|"services"} />{/key}
  {:else if section==="media"}<MediaLibrary />
  {:else if section==="assistant"}<AssistantManager onSecretState={(value)=>sensitive=value} />
  {:else if section==="theme-update"}<ThemeManager />
@@ -115,3 +116,5 @@
  {:else if section==="setup"}<Onboarding onDone={()=>navigate("overview")} onWrite={()=>{void navigate("posts").then(()=>{itemId="";editing=true;});}} />{/if}
  {/if}
 </div>
+
+<style>.grouped-nav{padding:.8rem}.desktop-sections{display:grid;gap:.5rem}.tab-group{display:grid;grid-template-columns:5rem minmax(0,1fr);align-items:start;gap:.4rem}.tab-buttons{display:flex;gap:.4rem;flex-wrap:wrap}.tab-group>span{padding-top:.65rem;font-size:.875rem}.tab-group button{white-space:nowrap}.tab-group button[aria-current="page"]{background:var(--primary);color:var(--deep-text)}.mobile-section{display:none}@media(max-width:767px){.desktop-sections{display:none}.mobile-section{display:grid;gap:.4rem}}</style>

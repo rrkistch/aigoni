@@ -534,6 +534,8 @@ func (s *Server) backupRestoreAPI(w http.ResponseWriter, r *http.Request) {
 func (s *Server) maintenanceGate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		exempt := strings.HasPrefix(r.URL.Path, adminAPIBasePath+"/backups") || r.URL.Path == adminAPIBasePath+"/session"
+		mediaMutation := strings.HasPrefix(r.URL.Path, adminAPIBasePath+"/media/") && !strings.HasPrefix(r.URL.Path, adminAPIBasePath+"/media/uploads/") && (r.Method == "DELETE" || r.Method == "POST" && strings.HasSuffix(r.URL.Path, "/replace"))
+		exempt = exempt || mediaMutation
 		if r.URL.Path == s.adminURL("maintenance") {
 			next.ServeHTTP(w, r)
 			return

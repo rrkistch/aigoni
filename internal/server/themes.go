@@ -612,6 +612,11 @@ func (s *Server) themeMaintenance(ctx context.Context) {
 			}
 			s.themeInstallMu.Unlock()
 			s.cleanupThemeVersions()
+			s.previewMu.Lock()
+			if !s.previewActive {
+				s.recoverPreviews()
+			}
+			s.previewMu.Unlock()
 		}
 	}
 }

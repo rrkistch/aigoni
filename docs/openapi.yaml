@@ -13,6 +13,46 @@ tags:
   - name: Admin API
   - name: MCP
 paths:
+  /api/admin/v1/media/{id}/replace:
+    post:
+      tags: [Admin API]
+      summary: Atomically replace all current editable references with another uploaded asset; retain old bytes/history/candidates
+      security: [{AdminSession: [], CSRFToken: []}]
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [replacement_id, revision, replacement_revision, confirm]
+              properties:
+                replacement_id: {type: string}
+                revision: {type: integer, minimum: 0}
+                replacement_revision: {type: integer, minimum: 0}
+                confirm: {const: true}
+      responses:
+        "200": {description: Current references saved; inspect build_status for publication}
+        "409": {description: Active write/read, incompatible type, stale revision or replacement failure}
+  /api/admin/v1/services/{group}/test:
+    post:
+      tags: [Admin API]
+      summary: Check saved connection fields and specified HTTP addresses without executing scripts, events or model calls
+      security: [{AdminSession: [], CSRFToken: []}]
+      parameters:
+        - {in: path, name: group, required: true, schema: {type: string, enum: [dynamic, comments, analytics, collections]}}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                allow_private: {type: boolean, default: false}
+      responses:
+        "200": {description: Checks include exact kind/status/scope; reachability does not prove third-party account or data correctness}
+        "401": {description: Login required}
+        "403": {description: CSRF rejected}
   /api/admin/v1/integrations:
     get:
       tags: [Admin API]
@@ -962,6 +1002,25 @@ paths:
         "401":
           description: Login required
   /api/admin/v1/media/{id}:
+    patch:
+      tags: [Admin API]
+      summary: Rename display name with media revision; immutable URL and bytes unchanged
+      security: [{AdminSession: [], CSRFToken: []}]
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, revision]
+              properties:
+                name: {type: string}
+                revision: {type: integer, minimum: 0}
+      responses:
+        "200": {description: Updated media metadata}
+        "409": {description: Stale revision}
     parameters:
       - name: id
         in: path

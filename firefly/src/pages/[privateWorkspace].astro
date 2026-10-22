@@ -1,9 +1,12 @@
 ---
 export function getStaticPaths(){ return [{params:{privateWorkspace:"_workspace"}}]; }
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { Font } from "astro:assets";
+import { fontsList } from "@/config";
 import Workspace from "@/components/aigoni/Workspace.svelte";
 ---
 <MainGridLayout title="私人工作区" description="个人笔记、Wiki 与写作">
  <meta slot="head" name="robots" content="noindex, nofollow" />
+ {process.env.AIGONI_CONTENT_DIR && fontsList.map(font=><Font cssVariable={font.cssVariable as any} preload={false} />)}
  <div data-aigoni-workspace data-pagefind-ignore="all"><Workspace client:only="svelte" /></div>
 </MainGridLayout>

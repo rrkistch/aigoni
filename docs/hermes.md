@@ -46,3 +46,6 @@ mcp_servers:
 MCP源码使用官方Go SDK，原生构建需要Go1.25+；Docker已带所需程序与Node运行环境，不需要额外MCP容器。现有 `AIGONI_API_KEY` 合同不变，不要把旧机器密钥或管理员密码交给Hermes。
 
 协议与配置依据：[官方Go SDK](https://github.com/modelcontextprotocol/go-sdk)、[Hermes MCP配置](https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp)。
+
+
+验收记录：官方Hermes源码 `81a55437f3f31a9f12a30c53b6c5d49d420898aa` 的 `cmd_mcp_test` 在隔离配置发现8个默认工具，并通过其原生连接器成功执行 `content_list`；未调用模型，也未修改生产Hermes。官方Go SDK客户端另外覆盖写草稿、审批、权限与撤销路径。

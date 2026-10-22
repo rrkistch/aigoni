@@ -116,6 +116,9 @@ func Create(root string, targets []Target, out string, themeVersion ...string) (
 				return errors.New("backup contains a non-portable file name")
 			}
 			if info.Mode().IsRegular() {
+				if smallBackupEntry(name, target) && info.Size() > 4<<20 {
+					return errors.New("configuration or Markdown entry exceeds the restorable 4 MiB limit")
+				}
 				manifest.Bytes += info.Size()
 			}
 			if manifest.Bytes > MaxExpanded || len(entries) >= 100000 {
@@ -300,7 +303,7 @@ func Extract(archive, stage string, targets []Target) (Manifest, error) {
 			if name == group && !target.File {
 				return manifest, errors.New("directory root cannot be replaced by a file")
 			}
-			small := target.File || group == "history" || group == "mediaindex" || (strings.HasSuffix(strings.ToLower(name), ".md") && group != "public" && group != "uploads")
+			small := smallBackupEntry(name, target)
 			if small && header.Size > 4<<20 {
 				return manifest, errors.New("configuration or Markdown entry exceeds 4 MiB")
 			}
@@ -476,3 +479,8 @@ func (e *CleanupError) Error() string {
 	return "restore completed, temporary cleanup pending: " + e.Err.Error()
 }
 func (e *CleanupError) Unwrap() error { return e.Err }
+
+func smallBackupEntry(name string, target Target) bool {
+	group := strings.SplitN(name, "/", 2)[0]
+	return target.File || group == "history" || group == "mediaindex" || (strings.HasSuffix(strings.ToLower(name), ".md") && group != "public" && group != "uploads")
+}

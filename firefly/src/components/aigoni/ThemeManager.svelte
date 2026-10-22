@@ -7,7 +7,7 @@
  async function load(){state=await api("/theme");}
  onMount(()=>{void load().catch(e=>error=e.message);const timer=setInterval(()=>{if(pending())void load().catch(e=>error=e.message);},2000);return()=>{clearInterval(timer);controller?.abort();};});
  async function action(fn:()=>Promise<void>){busy=true;error="";message="";try{await fn();await load();}catch(e){error=(e as Error).message;}finally{busy=false;}}
- async function upload(e:Event){const file=(e.currentTarget as HTMLInputElement).files?.[0];if(!file)return;uploading=true;uploadId="";progress=0;controller=new AbortController();await action(async()=>{try{await uploadTheme(file,p=>progress=p,controller?.signal,u=>{uploadId=u.id;state={...state,upload:u};});message="文件上传完成，正在验证；当前公开网站不变。";}catch(e){if((e as Error).name!=="AbortError")throw e;}});uploading=false;}
+ async function upload(e:Event){const input=e.currentTarget as HTMLInputElement;const file=input.files?.[0];if(!file)return;input.value="";uploading=true;uploadId="";progress=0;controller=new AbortController();await action(async()=>{try{await uploadTheme(file,p=>progress=p,controller?.signal,u=>{uploadId=u.id;state={...state,upload:u};});message="文件上传完成，正在验证；当前公开网站不变。";}catch(e){if((e as Error).name!=="AbortError")throw e;}});uploading=false;}
  async function activate(version:string,rollback=false){if(!confirm(rollback?"用上一主题重新构建当前内容和设置？不会恢复旧文章或已撤回页面。":"使用此主题构建当前内容和设置？构建成功后才切换公开网站。"))return;await action(async()=>{await api(rollback?"/theme/rollback":"/theme/activate","POST",{version});message="已排队构建，完成后才算主题上线。";});}
  async function cancel(){controller?.abort();await action(async()=>{if(state?.upload?.id)await api(`/theme/uploads/${state.upload.id}`,"DELETE");message="已取消上传或验证。";});}
 </script>

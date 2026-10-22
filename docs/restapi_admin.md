@@ -869,3 +869,13 @@
 - `GET /api/admin/v1/audit`：读取最近100个私有操作摘要；不进入公开快照或数据备份。
 
 工具写请求须带稳定request_id；相同标识不同参数拒绝，applying中断状态不重放。公开变更批准后仍须查询publication_status；仅published表示具体候选在当前公开版本中，superseded表示内容已被后续更新取代。配置审批同时绑定值、版本及主题。连接检查不代表Hermes网络已打通。完整配置与权限见 [Hermes指南](hermes.md)。源码构建需Go1.25+，Docker使用Go1.26。
+
+
+## 素材维护与服务检查
+
+- `PATCH /api/admin/v1/media/{id}`：`name`与素材`revision`。只改显示名称，不改不可变地址或文件。
+- `POST /api/admin/v1/media/{id}/replace`：`replacement_id`、旧素材`revision`、替代素材`replacement_revision`与`confirm:true`。替代素材须已上传且类型一致。更新执行时当前文章、页面、动态、项目、笔记、Wiki和配置引用。单次最多1000文件、128MiB总文本；单个自动替换文本不超过8MiB。失败回滚或进入独立维护恢复，不更新历史、候选或旧公开版本。
+- 素材引用检查覆盖当前内容、主题默认、站点设置、设置历史、Wiki备份、待处理助手候选及当前公开快照；检查失败不允许删除。旧文件的字节和地址保持不变。
+- `POST /api/admin/v1/services/{group}/test`：仅`comments/analytics/dynamic/collections`，可传`allow_private:true`明确许可本次内网访问。只检查已保存配置与列出的地址；报告配置检查或HTTP状态，不执行脚本、不发访问事件、不验证审核、报表、账号权限或API版本。
+
+以上管理写请求继续要求Session和CSRF。接口兼容级别3的主题增加素材替换和服务检查界面；后台仍支持级别1、2的旧主题。
