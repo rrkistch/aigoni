@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=require('node:path'),crypto=require('node:crypto');
 const exec=require('node:util').promisify(require('node:child_process').execFile);
 const root=path.resolve(__dirname,'../..');
-const archive=path.resolve(process.env.AIGONI_THEME_PACKAGE||path.join(root,'.firefly/theme-artifacts/aigoni-theme-v0.1.1-linux-amd64.tar.gz'));
+const archive=path.resolve(process.env.AIGONI_THEME_PACKAGE||path.join(root,'.firefly/theme-artifacts/aigoni-theme-v0.1.2-linux-amd64.tar.gz'));
 const image=process.env.AIGONI_TEST_IMAGE||'aigoni-firefly:theme-smoke';
 (async()=>{
  const info=await fs.stat(archive),tag=path.basename(archive).match(/^aigoni-(theme-v\d+\.\d+\.\d+)-linux-amd64\.tar\.gz$/)?.[1];assert.ok(tag);
