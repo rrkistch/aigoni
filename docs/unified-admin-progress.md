@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-功能实现已进入最终发布验收：独立后端镜像、主题包、统一后台和Hermes受控管理均已落地。最终稳定镜像仍由迁移整链门禁决定，未通过前不宣称全部交付完成。
+已完成并发布：后端镜像 v0.3.1、独立主题 theme-v0.3.0。统一后台、私人知识工作区、受控Hermes和恢复入口已完成相应验收。生产服务器未操作。
 
 主代理独立执行；不访问共享盘、不操作生产服务器。用户已授权提交main、推送Git和版本化镜像／主题包。AI自动测试均使用模拟服务，Hermes验证不调用模型。
 
@@ -34,6 +34,14 @@
 - 主题0.2使用接口兼容级别2（助手）；主题0.3使用级别3（素材/服务与最终后台）。新后端继续接受旧级别1、2主题。
 - 用户现有18080、数据卷、密码和配置文件不自动改写。运行、迁移、日常管理、恢复和Hermes指南见admin-guide.md、ghcr-deployment.md、independent-theme.md、backup-and-onboarding.md、hermes.md。
 
-## 交付前剩余动作
+## 最终交付
 
-发布主题0.3；等待正式镜像迁移门禁通过；记录最终Git提交、标签、镜像与主题包链接。已有有效检查不重复跑；失败只修对应原因。最终产物准备好后再标记全部完成。
+- 程序源码提交：d729ee769bd1bd9f9ed982676f3e19533ebfa093；后续main文档提交不改变该镜像的程序内容。
+- 后端固定镜像：ghcr.io/rrkistch/aigoni:v0.3.1，同时已更新latest。
+- 主题包：[theme-v0.3.0](https://github.com/rrkistch/aigoni/releases/tag/theme-v0.3.0)。
+- [完整候选验收](https://github.com/rrkistch/aigoni/actions/runs/39751455727)：Linux完整Go测试；1CPU/2GiB旧数据卷迁移、无内置主题、主题安装/升级/回退、当前配置与内容、真实MCP候选审批、私人附件、备份恢复、安全副本、重建持久化、启动恢复失败后的维护及恢复均通过。
+- [正式镜像发布](https://github.com/rrkistch/aigoni/actions/runs/39753258034)：核对源码标识，复用同一已验候选，发布v0.3.1与latest。
+- [主题发布](https://github.com/rrkistch/aigoni/actions/runs/39746525835)：原版字体预热后断网搬迁构建通过。
+- 代表性视觉记录见[evidence](evidence/README.md)，使用合成内容，不含用户密码、模型密钥或私人资料。
+
+Windows原生全套的两项原agent问题（符号链接权限、glob路径匹配）仍未通过；本次Linux Docker目标已通过完整测试。原生Windows运行Wiki工具前需处理其平台条件，不把这一缺口写成通过。

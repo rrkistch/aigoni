@@ -2,6 +2,8 @@
 
 GitHub Actions 分别发布后端镜像和带锁定依赖的主题包。后端通过容器安装与发布检查后推送 GHCR；主题通过搬迁构建后发布到 Releases。服务器不编译 Go 或安装前端依赖，仅在发布时生成静态页面。当前镜像支持 Linux amd64（`uname -m` 显示 x86_64）；ARM 服务器暂不使用此镜像。
 
+当前已验收组合：后端 `ghcr.io/rrkistch/aigoni:v0.3.1`，主题 [`theme-v0.3.0`](https://github.com/rrkistch/aigoni/releases/tag/theme-v0.3.0)。推荐固定版本部署；`latest`目前指向同一稳定镜像。
+
 ## 首次发布与公开权限
 
 推送 main 或在 Actions 的 Container image 中手动运行，会生成：
@@ -79,7 +81,7 @@ docker compose --env-file compose.env logs --tail=100 aigoni
 4. 访问“自定义后台路径/maintenance”，登录并上传 [正式可搬迁主题包](https://github.com/rrkistch/aigoni/releases)。使用 theme-v0.1.2 或以后素材完整版本。
 5. 验证通过后点击启用，等待主题和站点均已上线，再检查文章与私人工作区。
 
-详见 [安装与回退](independent-theme.md)。当前开发提交仍分阶段交付，普通 main 的 sha 镜像不是全部计划完成的稳定版本。
+详见 [安装与回退](independent-theme.md)。本次稳定组合已经通过完整迁移门禁。后续普通main的sha镜像仍属于候选，不应直接等同新的稳定版本。
 
 ## 升级与回退
 
