@@ -29,6 +29,13 @@ func (s *Server) webFrontend(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) adminFrontend(w http.ResponseWriter, r *http.Request) {
+	if s.siteBuild != nil && s.env.AdminFrontendDir == "" && !s.siteBuild.hasActive() && !strings.HasPrefix(r.URL.Path, "/_app/admin/") {
+		if _, err := os.Stat(filepath.Join(s.sourceThemeDir(), "scripts", "aigoni-build.mjs")); errors.Is(err, os.ErrNotExist) {
+			http.Redirect(w, r, s.adminURL("maintenance"), http.StatusTemporaryRedirect)
+			return
+		}
+	}
+
 	if s.siteBuild != nil && !strings.HasPrefix(r.URL.Path, "/_app/admin/") && s.env.AdminFrontendDir == "" && s.siteBuild.hasActive() {
 		s.serveFirefly(w, r, true)
 		return

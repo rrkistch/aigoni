@@ -9,7 +9,7 @@ const root=path.resolve(__dirname,"../..");
  const file=path.join(temp,"docker.env"),password="S$#"+crypto.randomBytes(24).toString("hex");
  await fs.writeFile(file,["ADMIN_PASSWORD="+password,"ADMIN_PATH=studio","COOKIE_SECURE=false","FRONTEND_MODE=firefly","FIREFLY_REBUILD_ON_START=true","AIGONI_UPLOAD_ALLOWED_EXTS=jpg,jpeg,png,webp,gif"].join("\n"),{mode:0o600});
  const env={...process.env,AIGONI_ENV_FILE:file,AIGONI_IMAGE:process.env.AIGONI_TEST_IMAGE||"aigoni-firefly:docker-smoke",AIGONI_PORT:"0",AIGONI_BIND_ADDRESS:"127.0.0.1"};
- const prefix=["compose","-p",project,"--env-file",path.join(root,"compose.env.example"),"-f",path.join(root,"compose.yaml")];
+ const prefix=["compose","-p",project,"--env-file",path.join(root,"compose.env.example"),"-f",path.join(root,"compose.yaml"),"-f",path.join(root,"deploy/docker/compose.limited.yaml")];
  const docker=async(...args)=>(await exec("docker",[...prefix,...args],{cwd:root,env,maxBuffer:4000000,timeout:120000})).stdout.trim();
  let created=false,origin,cookie="",csrf="";
  async function request(p,method="GET",body,auth=true){
@@ -41,7 +41,16 @@ const root=path.resolve(__dirname,"../..");
  try{
   await docker("config","--quiet");created=true;
   await docker("up","-d","--no-build","--pull","never");
-  await login();const first=await published(0);console.log("PASS fresh-volume startup");
+  await login();
+  const packageFile=process.env.AIGONI_THEME_PACKAGE;if(!packageFile)throw new Error("AIGONI_THEME_PACKAGE must point to the published official theme package");
+  const packageName=path.basename(packageFile),tag=packageName.match(/^aigoni-(theme-v\d+\.\d+\.\d+)-linux-amd64\.tar\.gz$/)?.[1];assert.ok(tag);
+  const info=await fs.stat(packageFile);let theme=await(await request("/api/admin/v1/theme/uploads","POST",{tag,name:packageName,size:info.size})).json();
+  assert.ok(theme.id,JSON.stringify(theme));const input=await fs.open(packageFile,"r");
+  try{while(theme.offset<info.size){const block=Buffer.alloc(Math.min(8*1024**2,info.size-theme.offset));const {bytesRead}=await input.read(block,0,block.length,theme.offset);assert.ok(bytesRead);const response=await fetch(origin+"/api/admin/v1/theme/uploads/"+theme.id+"?offset="+theme.offset,{method:"PUT",headers:{Cookie:cookie,"X-CSRF-Token":csrf,"Content-Type":"application/octet-stream"},body:block.subarray(0,bytesRead),signal:AbortSignal.timeout(30000)});assert.equal(response.status,200,await response.clone().text());theme=await response.json();}}finally{await input.close()}
+  assert.equal((await request("/api/admin/v1/theme/uploads/"+theme.id+"/complete","POST")).status,202);
+  await until(async()=>{const data=await(await request("/api/admin/v1/theme")).json();if(data.upload?.status==="failed")throw new Error(data.upload.error);return data.upload?.status==="ready";},"theme verification");
+  assert.equal((await request("/api/admin/v1/theme/activate","POST",{version:tag})).status,202);
+  const first=await published(0);console.log("PASS fresh-volume startup");
   assert.equal((await request("/","GET",undefined,false)).status,200);
   assert.ok((await(await request("/studio","GET",undefined,false)).text()).includes('content="/studio"'));
   assert.equal(await docker("exec","-T","aigoni","id","-u"),"1000");

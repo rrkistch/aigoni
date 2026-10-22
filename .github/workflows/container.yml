@@ -45,7 +45,14 @@ jobs:
             --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
             --label "org.opencontainers.image.revision=$GITHUB_SHA" \
             -t aigoni-firefly:docker-smoke .
+      - name: Download published portable theme for install verification
+        run: |
+          mkdir -p .theme-artifacts
+          curl --fail --location --retry 3 --output .theme-artifacts/aigoni-theme-v0.1.2-linux-amd64.tar.gz \
+            https://github.com/rrkistch/aigoni/releases/download/theme-v0.1.2/aigoni-theme-v0.1.2-linux-amd64.tar.gz
       - name: Verify healthcheck and real publishing
+        env:
+          AIGONI_THEME_PACKAGE: .theme-artifacts/aigoni-theme-v0.1.2-linux-amd64.tar.gz
         run: |
           node --test deploy/docker/healthcheck.test.cjs
           node deploy/docker/smoke.cjs

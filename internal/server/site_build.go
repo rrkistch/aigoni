@@ -370,6 +370,9 @@ func (s *Server) siteBuildLoop(ctx context.Context) {
 			log.Printf("Firefly build failed: %v; see %s", err, filepath.Join(b.root, "build.log"))
 			b.state.Status = "failed"
 			b.state.Error = "构建失败；内容已保存。请查看服务器构建日志后重试。"
+			if errors.Is(err, errThemeNotInstalled) {
+				b.state.Error = "主题尚未安装，请访问 " + s.adminURL("maintenance") + " 登录并上传官方主题包。"
+			}
 		} else {
 			previous := b.state
 			if built.ThemeVersion != b.state.Theme {
@@ -415,6 +418,9 @@ func (s *Server) runFireflyBuild(ctx context.Context, input, output string) erro
 	source, err := s.prepareThemeWork(ctx, snapshot.ThemeVersion)
 	if err != nil {
 		return err
+	}
+	if _, e := os.Stat(filepath.Join(source, "scripts", "aigoni-build.mjs")); errors.Is(e, os.ErrNotExist) {
+		return errThemeNotInstalled
 	}
 	if snapshot.ThemeVersion != "" && snapshot.ThemeVersion != "source" {
 		if err = validateThemeOverrides(source, snapshot.Theme); err != nil {

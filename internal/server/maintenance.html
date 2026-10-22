@@ -12,6 +12,7 @@ let theme=null;let themeUploading=false;
 async function refreshTheme(){
  try{theme=await request('/theme');}catch{return;}
  document.getElementById('theme-panel').hidden=false;
+ if(!theme.build.active){document.getElementById('back').hidden=true;document.getElementById('health').textContent='首次安装尚未完成，请在下方上传并启用官方主题包。成功上线后再返回管理工作区。';}else document.getElementById('back').hidden=false;
  document.getElementById('theme-status').textContent='当前：'+(theme.current||'原源码目录模式')+(theme.pending?' · 正在切换：'+theme.pending+' · '+theme.build.status:'');
  const upload=theme.upload;
  document.getElementById('theme-candidate').textContent=upload?upload.tag+' · '+upload.status+(upload.error?' · '+upload.error:''):'';
@@ -23,7 +24,7 @@ async function refreshTheme(){
  document.getElementById('upload-cancel').hidden=!['uploading','verifying','cancelling'].includes(upload?.status);
 }
 document.getElementById('theme-file').onchange=async event=>{
- const file=event.target.files?.[0];if(!file)return;
+ const file=event.target.files?.[0];if(!file)return;event.target.value='';
  const tag=file.name.match(/^aigoni-(theme-v[0-9]+\.[0-9]+\.[0-9]+)-linux-amd64\.tar\.gz$/)?.[1];
  if(!tag||file.size>1024**3){show('请选择本项目正式发布的 Linux amd64 主题包，最大 1 GiB。');return;}
  themeUploading=true;const progress=document.getElementById('theme-progress');progress.hidden=false;progress.value=0;

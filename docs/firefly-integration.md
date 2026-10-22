@@ -4,7 +4,7 @@ Firefly 源码位于项目的 firefly 目录；aigoni 原来的 frontend/web 和
 
 ## Docker 部署
 
-习惯使用 Docker 时，优先参照 [Docker 部署指南](docker-deployment.md)。无需在服务器单独安装 Go、Node 或 pnpm。
+习惯使用 Docker 时，优先参照 [Docker 部署指南](docker-deployment.md)。后端镜像与主题包独立发布，首次安装使用维护入口，见 [主题安装指南](independent-theme.md)。无需在服务器单独安装 Go、Node 或 pnpm。
 
 ## 首次运行
 
@@ -21,7 +21,7 @@ Firefly 源码位于项目的 firefly 目录；aigoni 原来的 frontend/web 和
 ## 配置归属
 
 - aigoni 后台：站点名称、描述、作者、头像、Logo、文章、页面、笔记、分类标签与发布状态。
-- Firefly 的 src/config：原版布局、字体、壁纸、动效及可选模块。保留上游配置结构；修改主题配置后在工作区执行重新构建。
+- 日常外观和模块内容：后台“外观与模块”。未覆盖的值沿用主题原版默认，每组可以恢复默认。Firefly 的 src/config 作为主题源码默认值，不是日常配置入口；只有主题代码开发才修改它。
 - 不把私人笔记或 Wiki 放进 Firefly 的 src/content 或 public。
 - 示例博客文章不会混入集成模式的文章集合。Firefly 其他模块仍按原版配置运行；正式使用前检查其中的演示介绍、友链、相册和第三方服务配置。
 - ADMIN_PATH 沿用现有设置。浏览器 API 固定为 /api/admin/v1；模型密钥和机器 API Key 仅留在 Go 后端。

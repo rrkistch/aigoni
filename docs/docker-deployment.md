@@ -1,6 +1,6 @@
 # 用 Docker 部署 aigoni + Firefly
 
-这套部署只需要一个应用容器，不需要数据库。aigoni 提供网站、管理后台和 API；容器内的 Node/pnpm 在发布时构建 Firefly。
+这套部署只需要一个应用容器，不需要数据库。aigoni 提供网站、管理后台和 API；后端镜像包含 Node/pnpm，主题源码和锁定依赖通过独立主题包安装，发布时只生成静态页面。
 
 小内存服务器优先使用 [GitHub 预构建镜像部署](ghcr-deployment.md)，不在服务器编译。下面保留从源码构建的操作流程。
 
@@ -21,7 +21,7 @@ openssl rand -hex 24
 
 - 先用 HTTP 本地试用：COOKIE_SECURE=false。
 - 通过正式 HTTPS 域名访问：COOKIE_SECURE=true。
-- 使用 AI 时再填 WIKI_APIKEY、WIKI_BASEURL 和 WIKI_MODEL；不配置不影响博客和笔记管理。
+- AI 可在后台“AI 服务”添加连接并获取模型；WIKI_APIKEY、WIKI_BASEURL、WIKI_MODEL 仍作为可选环境兼容来源。不配置不影响博客和笔记。
 
 启动：
 
@@ -33,7 +33,7 @@ docker compose --env-file compose.env logs -f --tail=100 aigoni
 
 默认只在服务器本机监听 127.0.0.1:8080，适合接到现有反向代理。它不会直接向公网暴露 8080 端口。
 
-第一次启动会自动在数据卷生成配置和目录，并进行首次构建。公开首页在构建完成前返回 503；/admin 或 /login 仍可打开原后台。构建完成后切换到 Firefly 工作区。
+第一次启动会在数据卷生成配置和目录。独立主题版镜像不含 Firefly 源码和依赖：先访问 `/admin/maintenance`（自定义后台路径时相应替换），登录后上传正式主题包并启用。首页在首次主题构建完成前返回503；安装步骤见 [独立主题指南](independent-theme.md)。旧一体化部署升级时保留已有公开页面，等新主题构建成功再切换。
 
 **首次登录后**，在设置中填写自己的站点名称、作者和正式站点地址，例如 https://blog.example.com。保存后会重新构建，避免 RSS、canonical 和 sitemap 继续使用 localhost。
 

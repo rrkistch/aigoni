@@ -23,6 +23,8 @@ import (
 	"aigoni/internal/themebundle"
 )
 
+var errThemeNotInstalled = errors.New("theme not installed")
+
 type themeUpload struct {
 	ID       string                `json:"id"`
 	Tag      string                `json:"tag"`
