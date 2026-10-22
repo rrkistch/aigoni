@@ -12,7 +12,7 @@ GitHub Actions 分别发布后端镜像和带锁定依赖的主题包。后端�
 
 查看仓库 Actions 的 Container image，只有整个任务绿色成功才算发布完成。首次创建的 GHCR 包默认可能是私有：在 GitHub 用户主页 Packages → aigoni → Package settings → Change visibility 中选择 Public。公开仓库不代表镜像自动公开。公开后服务器无需登录；密码、文章、笔记不会进入镜像。
 
-工作流使用临时 GITHUB_TOKEN，不需要把个人令牌写入仓库。若发布报 packages 权限错误，在仓库设置中检查 Actions 是否获准运行及组织包策略。手动运行使用 main；正式发布先等待该提交的 main 候选镜像通过，再推送 container-v 标签。标签流程复用同一候选镜像，运行完整迁移、主题升级回退、MCP审批和恢复门禁后才更新正式版本及 latest；不复用已有版本号。镜像不会自动更新正在运行的服务器。
+工作流使用临时 GITHUB_TOKEN，不需要把个人令牌写入仓库。若发布报 packages 权限错误，在仓库设置中检查 Actions 是否获准运行及组织包策略。手动运行使用 main；正式发布先等待该提交的 main 候选镜像通过，再推送 container-v 标签。main候选执行完整迁移、主题升级回退、MCP审批和恢复门禁；标签流程核对源码标识并复用该候选镜像，再更新正式版本及latest，不重复执行同一份已通过的证据；不复用已有版本号。镜像不会自动更新正在运行的服务器。
 
 ## 服务器启动
 

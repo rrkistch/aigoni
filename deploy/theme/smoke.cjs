@@ -65,7 +65,7 @@ const checkMCP=process.env.AIGONI_MCP_SMOKE==='1';
    assert.equal((await request('/','GET',undefined,false,false)).status,503);assert.equal((await request('/studio/maintenance','GET',undefined,false,false)).status,200);
    await docker('exec',name,'node','-e',"require('fs').unlinkSync('/data/.aigoni-admin/restore-journal.json')");await json('/api/admin/v1/backups/recover','POST',{confirm:true});await published(before.published_revision);console.log('PASS failed startup recovery keeps authenticated maintenance available and resumes safely');
   }
- }catch(error){if(containerCreated){try{console.error(await docker('logs','--tail','40',name));}catch{}}throw error;}finally{
+ }catch(error){if(containerCreated){try{console.error(await docker('logs','--tail','40',name));}catch{}}const reason=String(error.message||error).replaceAll(password,'[fixture redacted]').replace(/aigoni_mcp_[A-Za-z0-9_.-]+/g,'[fixture credential redacted]');if(process.env.GITHUB_ACTIONS)console.error('::error title=Deployment acceptance::'+reason.slice(0,6000).replaceAll('%','%25').replaceAll('\r','%0D').replaceAll('\n','%0A'));throw new Error(reason);}finally{
   if(containerCreated)await docker('rm','-f',name);if(volumeCreated)await docker('volume','rm',volume);
  }
 })().catch(error=>{console.error(error.stack||error);process.exitCode=1;});

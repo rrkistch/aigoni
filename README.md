@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-green.svg" /></a>
-  <img alt="Go" src="https://img.shields.io/badge/Go-1.22+-00ADD8.svg" />
+  <img alt="Go" src="https://img.shields.io/badge/Go-1.25+-00ADD8.svg" />
   <img alt="Markdown" src="https://img.shields.io/badge/Content-Markdown-black.svg" />
   <img alt="Status" src="https://img.shields.io/badge/status-active-blue.svg" />
 </p>
@@ -23,6 +23,14 @@
   <a href="#许可证">许可证</a> ·
   <a href="#联系作者">联系作者</a>
 </p>
+
+## Firefly 个人建站版
+
+本分支保留 Firefly 原版前台，提供统一后台、私人知识工作区、独立主题包和受控 Hermes 助手。后端使用 Docker 镜像，日常写作、音乐和装修在后台完成。
+
+- [服务器部署与迁移](docs/ghcr-deployment.md) · [日常后台操作](docs/admin-guide.md)
+- [主题安装、升级与回退](docs/independent-theme.md) · [数据备份恢复](docs/backup-and-onboarding.md)
+- [Hermes 接入与审批](docs/hermes.md) · [接口说明](docs/restapi_admin.md)
 
 ## 为什么是 Aigoni
 
