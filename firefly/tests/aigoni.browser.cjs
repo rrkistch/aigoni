@@ -5,6 +5,9 @@ const root=path.resolve(process.env.FIREFLY_TEST_RELEASE||"../.firefly/releases/
 const schema=JSON.parse(fs.readFileSync(path.resolve("../internal/server/admin_schema.json"),"utf8"));
 const defaults=JSON.parse(fs.readFileSync(path.resolve("aigoni-defaults.json"),"utf8"));
 let themeRevision=0,themeGroups={};
+let setupState={revision:0,step:0,completed:false,sample_mode:"",imported:false,suggested:false,samples:["示例动态、项目和关于页"]};
+let siteSettings={site:{name:"Aigoni",author:"作者",description:"个人博客",base_url:"https://example.com",logo:"",author_avatar:"",utc_offset:"+08:00"},pagination:{posts_per_page:10,home_posts_count:10},paths:{}};
+let backupItems=[];
 let aiState={revision:0,default_provider:"",source:"environment",providers:[]};
 const evidence=path.resolve(process.env.FIREFLY_TEST_EVIDENCE||"../.firefly/evidence");
 (async()=>{
@@ -43,12 +46,20 @@ const evidence=path.resolve(process.env.FIREFLY_TEST_EVIDENCE||"../.firefly/evid
     if(method==="PATCH"){const body=req.postDataJSON();assert.equal(body.revision,themeRevision);Object.assign(themeGroups,body.groups);themeRevision++;}
     data={revision:themeRevision,groups:themeGroups,effective:{...defaults,...themeGroups},defaults,schema,saved:true,build_status:"queued"};
    }
+   else if(p==="/backups"){
+    if(method==="POST")backupItems=[{id:"backup-fixture",kind:"backup",status:"ready",size:1024,created:new Date().toISOString(),manifest:{created:new Date().toISOString(),bytes:2048,roots:{posts:true,notes:true},excludes:["API keys"]}}];
+    data={items:backupItems,recovery_required:false,maintenance_url:"/studio/maintenance"};
+   }
+   else if(p==="/health")data={free_bytes:10*1024**3,checks:[{label:"发布状态",status:"ok",message:"当前版本已上线"}],theme:{version:"6.16.8"},ai_configured:false};
    else if(p==="/media")data={items:[]};
    else if(p==="/ai/providers"){
     if(method==="PATCH"){const body=req.postDataJSON();aiState={...body,revision:body.revision+1,source:body.default_provider?"backend":"environment",providers:body.providers.map(p=>({...p,id:p.id||"provider-fixture",has_key:true,api_key:undefined}))};}
     data=aiState;
    }
    else if(p==="/ai/providers/provider-fixture/models")data={models:["fixture-model"]};
+   else if(p==="/settings"){if(method==="PATCH")siteSettings={...siteSettings,...req.postDataJSON()};data=siteSettings;}
+   else if(p==="/onboarding"){if(method==="PATCH"){const input=req.postDataJSON();assert.equal(input.revision,setupState.revision);setupState={...setupState,...input,revision:setupState.revision+1};}data=setupState;}
+   else if(p==="/onboarding/samples"){const input=req.postDataJSON();assert.equal(input.confirm,true);setupState={...setupState,sample_mode:input.mode,revision:setupState.revision+1};data={changed:0,preserved:0};}
    else if(p==="/drafts")data={token:"fixture-token"};
    else if(p.endsWith("/assets"))data={items:[]};
    else if(["/categories","/tags","/note-categories","/note-tags"].includes(p))data=[];
@@ -138,9 +149,31 @@ const evidence=path.resolve(process.env.FIREFLY_TEST_EVIDENCE||"../.firefly/evid
    await page.screenshot({path:path.join(evidence,"theme-settings-"+label+".png")});
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),"settings overflow");
   }
+  await app.getByRole("button",{name:"建站引导",exact:true}).click();
+  await app.getByLabel("博客名称",{exact:true}).fill("我的博客");
+  await app.getByRole("button",{name:"保存并继续",exact:true}).click();
+  await app.getByRole("heading",{name:"选择博客需要的页面",exact:true}).waitFor();
+  await app.getByRole("button",{name:"保存并继续",exact:true}).click();
+  await app.getByRole("heading",{name:"怎么处理主题里的示例？",exact:true}).waitFor();
+  await app.getByRole("button",{name:"保存并继续",exact:true}).click();
+  await app.getByRole("heading",{name:"开始写你的第一篇文章",exact:true}).waitFor();
+  await app.getByRole("button",{name:"完成引导，返回概览",exact:true}).click();
+  await app.getByRole("heading",{name:"内容概览",exact:true}).waitFor();
+  assert.equal(setupState.completed,true);assert.equal(siteSettings.site.name,"我的博客");
+  await app.getByRole("button",{name:"网站维护",exact:true}).click();
+  await app.getByRole("heading",{name:"网站维护",exact:true}).waitFor();
+  await app.getByRole("button",{name:"创建数据备份",exact:true}).click();
+  await app.getByRole("link",{name:"下载备份",exact:true}).waitFor();
+  assert.equal(await app.getByRole("link",{name:"下载备份",exact:true}).getAttribute("href"),"/api/admin/v1/backups/items/backup-fixture/download");
+  for(const [label,width,dark] of [["desktop",1440,false],["mobile",390,true]]){
+   await page.setViewportSize({width,height:1000});await page.evaluate(d=>document.documentElement.classList.toggle("dark",d),dark);
+   await page.evaluate(()=>window.scrollTo({top:0,behavior:"instant"}));await page.waitForTimeout(600);
+   await page.screenshot({path:path.join(evidence,"maintenance-"+label+".png")});
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),"maintenance overflow");
+  }
   await app.getByRole("button",{name:"退出",exact:true}).click();
   await app.getByLabel("管理员密码").waitFor();assert.equal(authenticated,false);
   assert.deepEqual(errors,[]);
-  console.log("PASS public search, login, CSRF, create, conflict retention, Wiki, AI stream, responsive themes, AI configuration, theme/music editing, logout");
+  console.log("PASS public search, login, CSRF, create, conflict retention, Wiki, AI stream, responsive themes, AI configuration, theme/music editing, onboarding, maintenance, logout");
  }catch(error){const current=browser.contexts()[0]?.pages()[0];if(current){fs.mkdirSync(evidence,{recursive:true});await current.screenshot({path:path.join(evidence,"browser-failure.png")});console.error((await current.locator(".aigoni").innerText()).slice(-5000));}throw error;}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(e=>{console.error(e);process.exit(1);});

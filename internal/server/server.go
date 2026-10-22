@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"aigoni/internal/agent"
 	"aigoni/internal/auth"
@@ -15,6 +16,13 @@ import (
 )
 
 type Server struct {
+	maintenanceMu   sync.RWMutex
+	restoreMu       sync.RWMutex
+	restoreBlocked  atomic.Bool
+	backupMu        sync.Mutex
+	backupStateMu   sync.Mutex
+	backupActive    string
+	onboardingMu    sync.Mutex
 	previewContext  context.Context
 	previewMu       sync.Mutex
 	previewActive   bool
@@ -80,6 +88,7 @@ func NewWithFrontendFS(root string, cfg *config.Config, env *config.Env, webFron
 		s.siteBuild = newSiteBuilder(s)
 		s.recoverPreviews()
 	}
+	s.recoverBackupTasks()
 	return s
 }
 

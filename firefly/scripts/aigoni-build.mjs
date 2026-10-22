@@ -13,14 +13,15 @@ for(const kind of ["posts","pages","dynamics","projects"]){
  await fs.mkdir(path.join(contentRoot,kind),{recursive:true});
  for(const item of (snapshot[kind]||[])){
   if(!/^[a-zA-Z0-9_-]+$/.test(item.slug))throw new Error("Unsafe slug");
-  const fields={title:item.title,description:item.description,category:item.category,tags:item.tags,image:item.image,aigoniWeight:item.weight,aigoniTOC:item.toc,draft:false,sourceLink:item.sourceLink||"",...(item.display||{}),order:kind==="projects"?-item.weight:item.weight};
+  const fields={title:item.title,description:item.description,category:item.category,tags:item.tags,image:item.image,aigoniWeight:item.weight,aigoniTOC:item.toc,draft:false,sourceLink:item.sourceLink||"",...(item.display||{}),order:item.weight};
   const front=Object.entries(fields).map(([k,v])=>k+": "+JSON.stringify(v)).join("\n");
   await fs.writeFile(path.join(contentRoot,kind,item.slug+".md"),"---\n"+front+"\npublished: "+item.published+"\nupdated: "+item.updated+"\n---\n"+item.body+"\n");
  }
 }
 await fs.cp(path.join(root,"src","content","spec"),path.join(contentRoot,"spec"),{recursive:true});
+if(snapshot.site.use_theme_examples===false){for(const name of ["about","friends"])await fs.writeFile(path.join(contentRoot,"spec",name+".md"),"---\n---\n");}
 const about=(snapshot.pages||[]).find(item=>item.slug==="about");
-if(about)await fs.writeFile(path.join(contentRoot,"spec","about.md"),about.body+"\n");
+if(about)await fs.writeFile(path.join(contentRoot,"spec","about.md"),"---\ntitle: "+JSON.stringify(about.title)+"\ndescription: "+JSON.stringify(about.description||"")+"\n---\n"+about.body+"\n");
 const env={...process.env,AIGONI_PRIVATE_PREVIEW:snapshot.private_preview?"1":"",PUBLIC_AIGONI_THEME:JSON.stringify(snapshot.theme||{}),AIGONI_CONTENT_DIR:path.relative(root,contentRoot).replaceAll("\\","/"),AIGONI_ASSET_PREFIX:"/_firefly/"+generation,PUBLIC_AIGONI_SITE:JSON.stringify({...snapshot.site,adminPath:snapshot.adminPath}),ASTRO_TELEMETRY_DISABLED:"1"};
 delete env.CF_WORKERS;
 await new Promise((resolve,reject)=>{

@@ -66,3 +66,18 @@ func TestThemeSettingsPublishConflictAndDefaults(t *testing.T) {
 		t.Fatal("group reset", err)
 	}
 }
+
+func TestThemeWithdrawalDistinguishesEditsFromRemoval(t *testing.T) {
+	old := map[string]any{"friends": []any{map[string]any{"title": "Old", "siteurl": "https://example.com"}}}
+	edited := map[string]any{"friends": []any{map[string]any{"title": "New", "siteurl": "https://example.com"}}}
+	if themeContentWithdrawn(old, edited) {
+		t.Fatal("ordinary edit should preserve last good release on failure")
+	}
+	if !themeContentWithdrawn(old, map[string]any{"friends": []any{}}) {
+		t.Fatal("removed public content must block old release")
+	}
+	old = map[string]any{"gallery": map[string]any{"albums": []any{map[string]any{"id": "old"}}}}
+	if !themeContentWithdrawn(old, map[string]any{"gallery": map[string]any{"albums": []any{map[string]any{"id": "new"}}}}) {
+		t.Fatal("old gallery route remains exposed")
+	}
+}

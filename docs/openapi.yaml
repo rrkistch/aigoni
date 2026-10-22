@@ -12,6 +12,324 @@ tags:
   - name: Machine API
   - name: Admin API
 paths:
+  /api/admin/v1/health:
+    get:
+      tags: [Admin API]
+      summary: "检查应用站点状态，不调用 AI"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200": {description: Operation result}
+        "202": {description: Task queued; poll task state}
+        "400": {description: Invalid input}
+        "401": {description: Login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Revision conflict or active task}
+        "503": {description: Maintenance or recovery required}
+  /api/admin/v1/onboarding:
+    get:
+      tags: [Admin API]
+      summary: "读取引导进度与 revision"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200": {description: Operation result}
+        "202": {description: Task queued; poll task state}
+        "400": {description: Invalid input}
+        "401": {description: Login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Revision conflict or active task}
+        "503": {description: Maintenance or recovery required}
+    patch:
+      tags: [Admin API]
+      summary: "保存 step/completed；要求 revision"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        "200": {description: Operation result}
+        "202": {description: Task queued; poll task state}
+        "400": {description: Invalid input}
+        "401": {description: Login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Revision conflict or active task}
+        "503": {description: Maintenance or recovery required}
+  /api/admin/v1/onboarding/samples:
+    post:
+      tags: [Admin API]
+      summary: "选择 keep/clear；要求 revision、mode、confirm:true"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        "200": {description: Operation result}
+        "202": {description: Task queued; poll task state}
+        "400": {description: Invalid input}
+        "401": {description: Login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Revision conflict or active task}
+        "503": {description: Maintenance or recovery required}
+  /api/admin/v1/backups:
+    get:
+      tags: [Admin API]
+      summary: "读取备份任务与 recovery_required"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200": {description: Operation result}
+        "202": {description: Task queued; poll task state}
+        "400": {description: Invalid input}
+        "401": {description: Login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Revision conflict or active task}
+        "503": {description: Maintenance or recovery required}
+    post:
+      tags: [Admin API]
+      summary: "排队创建一致性数据备份"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        "200": {description: Operation result}
+        "202": {description: Task queued; poll task state}
+        "400": {description: Invalid input}
+        "401": {description: Login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Revision conflict or active task}
+        "503": {description: Maintenance or recovery required}
+  /api/admin/v1/backups/items/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: {type: string}
+    get:
+      tags: [Admin API]
+      summary: "读取任务状态"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200": {description: Operation result}
+        "202": {description: Task queued; poll task state}
+        "400": {description: Invalid input}
+        "401": {description: Login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Revision conflict or active task}
+        "503": {description: Maintenance or recovery required}
+    delete:
+      tags: [Admin API]
+      summary: "删除非活动备份及暂存文件"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      responses:
+        "200": {description: Operation result}
+        "202": {description: Task queued; poll task state}
+        "400": {description: Invalid input}
+        "401": {description: Login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Revision conflict or active task}
+        "503": {description: Maintenance or recovery required}
+  /api/admin/v1/backups/items/{id}/download:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: {type: string}
+    get:
+      tags: [Admin API]
+      summary: "下载管理员私有备份文件"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200": {description: Operation result}
+        "202": {description: Task queued; poll task state}
+        "400": {description: Invalid input}
+        "401": {description: Login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Revision conflict or active task}
+        "503": {description: Maintenance or recovery required}
+  /api/admin/v1/backups/items/{id}/restore:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: {type: string}
+    post:
+      tags: [Admin API]
+      summary: "要求 confirm:true；创建安全备份后恢复已验证数据"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        "200": {description: Operation result}
+        "202": {description: Task queued; poll task state}
+        "400": {description: Invalid input}
+        "401": {description: Login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Revision conflict or active task}
+        "503": {description: Maintenance or recovery required}
+  /api/admin/v1/backups/items/{id}/validate:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: {type: string}
+    post:
+      tags: [Admin API]
+      summary: "重新验证恢复包，不改当前数据"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        "200": {description: Operation result}
+        "202": {description: Task queued; poll task state}
+        "400": {description: Invalid input}
+        "401": {description: Login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Revision conflict or active task}
+        "503": {description: Maintenance or recovery required}
+  /api/admin/v1/backups/recover:
+    post:
+      tags: [Admin API]
+      summary: "要求 confirm:true；恢复中断的文件事务"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        "200": {description: Operation result}
+        "202": {description: Task queued; poll task state}
+        "400": {description: Invalid input}
+        "401": {description: Login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Revision conflict or active task}
+        "503": {description: Maintenance or recovery required}
+  /api/admin/v1/backups/uploads:
+    post:
+      tags: [Admin API]
+      summary: "创建上传；要求 name 和 size，最大 4 GiB"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        "200": {description: Operation result}
+        "202": {description: Task queued; poll task state}
+        "400": {description: Invalid input}
+        "401": {description: Login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Revision conflict or active task}
+        "503": {description: Maintenance or recovery required}
+  /api/admin/v1/backups/uploads/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: {type: string}
+    get:
+      tags: [Admin API]
+      summary: "查询续传 offset"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200": {description: Operation result}
+        "202": {description: Task queued; poll task state}
+        "400": {description: Invalid input}
+        "401": {description: Login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Revision conflict or active task}
+        "503": {description: Maintenance or recovery required}
+    put:
+      tags: [Admin API]
+      summary: "写入最多 8 MiB 原始分块；要求查询参数 offset"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      parameters:
+        - in: query
+          name: offset
+          required: true
+          schema: {type: integer, minimum: 0}
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema: {type: string, format: binary}
+      responses:
+        "200": {description: Operation result}
+        "202": {description: Task queued; poll task state}
+        "400": {description: Invalid input}
+        "401": {description: Login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Revision conflict or active task}
+        "503": {description: Maintenance or recovery required}
+  /api/admin/v1/backups/uploads/{id}/complete:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: {type: string}
+    post:
+      tags: [Admin API]
+      summary: "完成上传并启动校验"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        "200": {description: Operation result}
+        "202": {description: Task queued; poll task state}
+        "400": {description: Invalid input}
+        "401": {description: Login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Revision conflict or active task}
+        "503": {description: Maintenance or recovery required}
   /api/admin/v1/theme-settings:
     get:
       tags:

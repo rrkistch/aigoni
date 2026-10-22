@@ -22,6 +22,7 @@ func (s *Server) Handler() http.Handler {
 
 	s.registerAdminAPIRoutes(mux)
 	mux.HandleFunc("GET /login", s.adminFrontend)
+	mux.HandleFunc("GET "+s.adminURL("maintenance"), s.maintenancePage)
 	adminPath := s.adminPath()
 	mux.HandleFunc("GET "+adminPath, s.adminFrontend)
 	mux.HandleFunc("GET "+adminPath+"/", s.adminFrontend)
@@ -43,7 +44,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /", s.webFrontend)
 
 	if s.siteBuild != nil {
-		return s.siteBuildMiddleware(mux)
+		return s.maintenanceGate(s.siteBuildMiddleware(mux))
 	}
-	return mux
+	return s.maintenanceGate(mux)
 }

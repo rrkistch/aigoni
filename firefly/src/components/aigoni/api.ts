@@ -38,16 +38,19 @@ export async function eventStream(id:string,from:number,signal:AbortSignal,onEve
  } finally {reader.releaseLock();}
 }
 
-export async function uploadMedia(file:File,onProgress:(percent:number)=>void):Promise<any>{
- const key="aigoni-media-upload:"+file.name+":"+file.size+":"+file.lastModified;
- let upload:any=null;
- const prior=sessionStorage.getItem(key);
- if(prior){try{upload=await api("/media/uploads/"+prior);}catch{sessionStorage.removeItem(key);}}
- if(!upload){upload=await api("/media/uploads","POST",{name:file.name,size:file.size});sessionStorage.setItem(key,upload.id);}
+export async function uploadMedia(file:File,onProgress:(percent:number)=>void):Promise<any>{return uploadFile("/media/uploads","aigoni-media-upload:",file,onProgress);}
+export async function uploadBackup(file:File,onProgress:(percent:number)=>void):Promise<any>{return uploadFile("/backups/uploads","aigoni-backup-upload:",file,onProgress);}
+async function uploadFile(endpoint:string,prefix:string,file:File,onProgress:(percent:number)=>void):Promise<any>{
+ const key=prefix+file.name+":"+file.size+":"+file.lastModified;
+ let upload:any=null;const prior=sessionStorage.getItem(key);
+ if(prior){try{upload=await api(endpoint+"/"+prior);}catch{sessionStorage.removeItem(key);}}
+ if(!upload){upload=await api(endpoint,"POST",{name:file.name,size:file.size});sessionStorage.setItem(key,upload.id);}
  while(upload.offset<file.size){
   const end=Math.min(upload.offset+8*1024*1024,file.size);
-  const response=await fetch(base+"/media/uploads/"+upload.id+"?offset="+upload.offset,{method:"PUT",credentials:"same-origin",headers:{"X-CSRF-Token":csrf,"Content-Type":"application/octet-stream"},body:file.slice(upload.offset,end)});
-  const data=await response.json();if(!response.ok)throw new Error(data.error?.message||"上传失败，请重新选择同一文件继续。");upload=data;onProgress(Math.round(upload.offset/file.size*100));
+  const response=await fetch(base+endpoint+"/"+upload.id+"?offset="+upload.offset,{method:"PUT",credentials:"same-origin",headers:{"X-CSRF-Token":csrf,"Content-Type":"application/octet-stream"},body:file.slice(upload.offset,end)});
+  if(response.status===401)window.dispatchEvent(new Event("aigoni-session-expired"));
+  let data;try{data=await response.json();}catch{throw new Error(`上传返回 HTTP ${response.status}，请检查反向代理上传限制或重新连接。`);}
+  if(!response.ok)throw new Error(data.error?.message||"上传失败，请重新选择同一文件继续。");upload=data;onProgress(Math.round(upload.offset/file.size*100));
  }
- const item=await api("/media/uploads/"+upload.id+"/complete","POST");sessionStorage.removeItem(key);return item;
+ const result=await api(endpoint+"/"+upload.id+"/complete","POST");sessionStorage.removeItem(key);return result;
 }

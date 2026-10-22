@@ -90,6 +90,7 @@ func (s *Server) adminAPIDashboard(w http.ResponseWriter, _ *http.Request) {
 		Notes: len(notes),
 		Features: map[string]bool{
 			"posts":           true,
+			"onboarding":      true,
 			"pages":           true,
 			"notes":           true,
 			"search":          true,

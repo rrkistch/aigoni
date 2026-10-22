@@ -97,6 +97,7 @@
     "columnWidth": 240
   },
   "footer": {
+    "useThemeHTML": true,
     "text": "",
     "icpText": "",
     "icpURL": "",

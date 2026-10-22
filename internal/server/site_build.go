@@ -61,6 +61,7 @@ type siteBuildStatus struct {
 	UpdatedAt         time.Time `json:"updated_at"`
 }
 type siteBuilder struct {
+	aliases   map[string]string
 	buildMu   sync.Mutex
 	mu        sync.Mutex
 	refreshMu sync.Mutex
@@ -93,6 +94,7 @@ func newSiteBuilder(s *Server) *siteBuilder {
 			}
 		}
 	}
+	b.aliases = buildPublishedAliases(b.published)
 	b.run = s.runFireflyBuild
 	return b
 }
@@ -158,6 +160,11 @@ func (s *Server) publicSnapshot() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	setup, err := s.readOnboarding()
+	if err != nil {
+		return nil, err
+	}
+	snap.Site["use_theme_examples"] = setup.Value.SampleMode != "clear"
 	return json.Marshal(snap)
 }
 func withdrawn(old, new []byte) bool {
@@ -166,6 +173,12 @@ func withdrawn(old, new []byte) bool {
 		return false
 	}
 	if json.Unmarshal(new, &b) != nil {
+		return true
+	}
+	if a.Site["use_theme_examples"] != false && b.Site["use_theme_examples"] == false {
+		return true
+	}
+	if themeContentWithdrawn(a.Theme, b.Theme) {
 		return true
 	}
 	keys := map[string]bool{}
@@ -335,6 +348,7 @@ func (s *Server) siteBuildLoop(ctx context.Context) {
 				b.state.Error = "构建完成但版本切换失败"
 			} else {
 				b.published = data
+				b.aliases = buildPublishedAliases(data)
 				b.pending = nil
 			}
 		}
@@ -428,7 +442,7 @@ func (s *Server) serveFirefly(w http.ResponseWriter, r *http.Request, admin bool
 	b := s.siteBuild
 	b.mu.Lock()
 	state := b.state
-	published := append([]byte(nil), b.published...)
+	aliasTarget := b.aliases[strings.TrimSuffix(r.URL.Path, "/")]
 	b.mu.Unlock()
 	if state.Active == "" && !strings.HasPrefix(r.URL.Path, "/_firefly/preview-") {
 		http.Error(w, "Firefly 首次构建尚未完成，请在管理后台检查构建状态。", 503)
@@ -470,8 +484,8 @@ func (s *Server) serveFirefly(w http.ResponseWriter, r *http.Request, admin bool
 		return
 	}
 	if !admin {
-		if target := publishedAlias(published, requestPath); target != "" {
-			http.Redirect(w, r, target, http.StatusMovedPermanently)
+		if aliasTarget != "" {
+			http.Redirect(w, r, aliasTarget, http.StatusMovedPermanently)
 			return
 		}
 		if slug, ok := frontendArticleSlug(requestPath); ok {
@@ -562,26 +576,98 @@ func (s *Server) serveFirefly(w http.ResponseWriter, r *http.Request, admin bool
 
 var _ io.Writer = (*buildResponse)(nil)
 
-func publishedAlias(data []byte, requestPath string) string {
+func buildPublishedAliases(data []byte) map[string]string {
+	out := map[string]string{}
 	var snap fireflySnapshot
 	if json.Unmarshal(data, &snap) != nil {
-		return ""
+		return out
 	}
 	for _, group := range []struct {
 		prefix string
 		items  []fireflyPost
 	}{{"/posts/", snap.Posts}, {"/page/", snap.Pages}, {"/projects/", snap.Projects}} {
-		if !strings.HasPrefix(requestPath, group.prefix) {
-			continue
-		}
-		slug := strings.TrimSuffix(strings.TrimPrefix(requestPath, group.prefix), "/")
 		for _, item := range group.items {
 			for _, alias := range item.Aliases {
-				if alias == slug {
-					return group.prefix + url.PathEscape(item.Slug) + "/"
-				}
+				out[group.prefix+alias] = group.prefix + url.PathEscape(item.Slug) + "/"
 			}
 		}
 	}
-	return ""
+	for _, item := range snap.Pages {
+		if item.Slug == "about" {
+			out["/page/about"] = "/about/"
+		}
+	}
+	return out
+}
+
+func themeContentWithdrawn(old, new map[string]any) bool {
+	// A reset/removal of content-bearing configuration must not serve old content after a failed rebuild.
+	for _, name := range []string{"friends", "booknav", "gallery", "music", "announcement", "sponsor"} {
+		previous, wasSet := old[name]
+		next, isSet := new[name]
+		if wasSet && !isSet {
+			return true
+		}
+		if !isSet {
+			continue
+		}
+		if themeValueRemoved(previous, next) {
+			return true
+		}
+	}
+	pages, _ := new["pages"].(map[string]any)
+	before, _ := old["pages"].(map[string]any)
+	for name, value := range pages {
+		if value == false && before[name] != false {
+			return true
+		}
+	}
+	return false
+}
+func themeValueRemoved(old, new any) bool {
+	switch next := new.(type) {
+	case []any:
+		previous, _ := old.([]any)
+		if len(next) == 0 && old == nil {
+			return true
+		}
+		if len(next) < len(previous) {
+			return true
+		}
+		// Album/group IDs identify real public routes; ordinary title/text edits may keep the old successful build.
+		for _, item := range previous {
+			entry, ok := item.(map[string]any)
+			if !ok {
+				continue
+			}
+			id, ok := entry["id"].(string)
+			if !ok || id == "" {
+				continue
+			}
+			found := false
+			for _, candidate := range next {
+				v, ok := candidate.(map[string]any)
+				if ok && v["id"] == id {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return true
+			}
+		}
+
+	case map[string]any:
+		previous, _ := old.(map[string]any)
+		for key, value := range next {
+			if themeValueRemoved(previous[key], value) {
+				return true
+			}
+		}
+	case string:
+		if next == "" && old != nil && old != "" {
+			return true
+		}
+	}
+	return false
 }

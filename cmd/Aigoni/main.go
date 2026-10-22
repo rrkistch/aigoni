@@ -14,12 +14,20 @@ import (
 	"aigoni"
 	"aigoni/internal/config"
 	"aigoni/internal/server"
+	"aigoni/internal/sitebackup"
 )
 
 func main() {
 	root, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
+	}
+	if err := sitebackup.Recover(root); err != nil {
+		var cleanup *sitebackup.CleanupError
+		if !errors.As(err, &cleanup) {
+			log.Fatal("Data recovery required before startup: ", err)
+		}
+		log.Printf("Restore cleanup pending: %v", err)
 	}
 	if err := aigoni.EnsureRuntimeFiles(root); err != nil {
 		log.Fatal(err)

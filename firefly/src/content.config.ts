@@ -94,10 +94,10 @@ const postsCollection: ContentCollection<PostData> = defineCollection({
 	}),
 });
 
-const specCollection: ContentCollection<Record<string, never>> =
+const specCollection: ContentCollection<{title?:string;description?:string}> =
 	defineCollection({
 		loader: glob({ pattern: "**/*.{md,mdx}", base: process.env.AIGONI_CONTENT_DIR ? process.env.AIGONI_CONTENT_DIR + "/spec" : "./src/content/spec" }),
-		schema: z.object({}),
+		schema: z.object({title:z.string().optional(),description:z.string().optional()}),
 	});
 
 const dynamicCollection: ContentCollection<DynamicData> = defineCollection({

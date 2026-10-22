@@ -124,6 +124,9 @@ func (s *Server) previewsAPI(w http.ResponseWriter, r *http.Request) {
 		case content.TypePage:
 			snap.Pages = replace(snap.Pages)
 			page = "/page/" + item.Slug + "/"
+			if item.Slug == "about" {
+				page = "/about/"
+			}
 		case content.TypeDynamic:
 			snap.Dynamics = replace(snap.Dynamics)
 			page = "/dynamic/"

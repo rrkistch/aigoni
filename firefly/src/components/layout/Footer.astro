@@ -38,7 +38,7 @@ try {
 	<div class="transition flex flex-col items-center justify-center px-6">
 		<div class="transition text-50 text-sm text-center wrap">
 			<div class="mb-2">
-				{customFooterHtml && <div set:html={customFooterHtml} />}
+				{aigoniFooter.useThemeHTML && customFooterHtml && <div set:html={customFooterHtml} />}
                 {aigoniFooter.text && <p>{aigoniFooter.text}</p>}
                 {aigoniFooter.icpText && <a href={aigoniFooter.icpURL || undefined} rel="noopener noreferrer" target="_blank">{aigoniFooter.icpText}</a>}
                 {aigoniFooter.links.map(link => <a class="mx-2" href={link.url}>{link.text}</a>)}

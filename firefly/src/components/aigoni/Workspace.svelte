@@ -7,17 +7,20 @@
  import AISettings from "./AISettings.svelte";
  import ThemeSettings from "./ThemeSettings.svelte";
  import MediaLibrary from "./MediaLibrary.svelte";
+ import Onboarding from "./Onboarding.svelte";
+ import Maintenance from "./Maintenance.svelte";
  import "./workspace.css";
  let authenticated=$state(false);let checking=$state(true);let password=$state("");let error=$state("");let busy=$state(false);
  let section=$state("overview");let list=$state<any>({items:[],total:0,total_pages:0});let page=$state(1);let query=$state("");let category=$state("");let tag=$state("");let published=$state("");
  let categories=$state<any[]>([]);let tags=$state<any[]>([]);let editing=$state(false);let itemId=$state("");let dashboard=$state<any>(null);let build=$state<any>(null);
  let request=0;let timer:ReturnType<typeof setInterval>;let disposed=false;
- const tabs=[["overview","概览"],["posts","文章"],["pages","页面"],["dynamics","动态"],["projects","项目"],["notes","笔记与收藏"],["wiki","Wiki"],["chat","AI 对话"],["settings","设置"],["ai-settings","AI 服务"],["appearance","外观与模块"],["media","素材"]];
+ const tabs=[["overview","概览"],["posts","文章"],["pages","页面"],["dynamics","动态"],["projects","项目"],["notes","笔记与收藏"],["wiki","Wiki"],["chat","AI 对话"],["settings","设置"],["ai-settings","AI 服务"],["appearance","外观与模块"],["media","素材"],["setup","建站引导"],["maintenance","网站维护"]];
  const contentSection=()=>["posts","pages","notes","dynamics","projects"].includes(section);
  const title=()=>tabs.find(t=>t[0]===section)?.[1]||"工作区";
  async function refreshStatus(){if(authenticated){[dashboard,build]=await Promise.all([api("/dashboard"),api("/site-build")]);}}
- async function check(){try{const session=await api("/session");setCSRF(session.csrf_token);authenticated=true;await refreshStatus();const initial=location.hash.slice(1)||location.pathname.split("/")[2];if(tabs.some(t=>t[0]===initial))await navigate(initial);}catch{authenticated=false;error="";}finally{checking=false;}}
- async function login(){busy=true;error="";try{const session=await api("/session","POST",{password});setCSRF(session.csrf_token);password="";authenticated=true;await refreshStatus();}catch(e){error=(e as Error).message;}finally{busy=false;}}
+ async function offerSetup(){if(dashboard?.features?.onboarding&&!location.hash){try{const state=await api("/onboarding");if(state.suggested)await navigate("setup");}catch{error="建站引导暂时不可用，可以继续使用其他功能。";}}}
+ async function check(){try{const session=await api("/session");setCSRF(session.csrf_token);authenticated=true;await refreshStatus();const initial=location.hash.slice(1)||location.pathname.split("/")[2];if(tabs.some(t=>t[0]===initial))await navigate(initial);else await offerSetup();}catch{authenticated=false;error="";}finally{checking=false;}}
+ async function login(){busy=true;error="";try{const session=await api("/session","POST",{password});setCSRF(session.csrf_token);password="";authenticated=true;await refreshStatus();await offerSetup();}catch(e){error=(e as Error).message;}finally{busy=false;}}
  async function logout(){try{await api("/session","DELETE");setCSRF("");authenticated=false;list={items:[]};dashboard=null;editing=false;section="overview";sessionStorage.removeItem("aigoni-run:"+(document.querySelector('meta[name="aigoni-admin-path"]')?.getAttribute("content")||"/admin"));}catch(e){error=(e as Error).message;}}
  async function loadList(){
   const serial=++request;busy=true;error="";
@@ -100,6 +103,8 @@
  {:else if section==="settings"}<Settings />
  {:else if section==="ai-settings"}<AISettings />
  {:else if section==="appearance"}<ThemeSettings />
- {:else if section==="media"}<MediaLibrary />{/if}
+ {:else if section==="media"}<MediaLibrary />
+ {:else if section==="maintenance"}<Maintenance />
+ {:else if section==="setup"}<Onboarding onDone={()=>navigate("overview")} onWrite={()=>{void navigate("posts").then(()=>{itemId="";editing=true;});}} />{/if}
  {/if}
 </div>

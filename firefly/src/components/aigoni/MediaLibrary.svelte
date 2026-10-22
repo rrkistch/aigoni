@@ -14,7 +14,7 @@
  {#if error}<div class="notice error" role="alert">{error}</div>{/if}{#if message}<div class="notice" role="status">{message}</div>{/if}
  <label>类型<select bind:value={kind}><option value="">全部</option><option value="image">图片</option><option value="audio">音频</option><option value="lyrics">歌词</option></select></label>
  <div class="media-grid">{#each items.filter(item=>!kind||item.kind===kind) as item}<article class="stack media-item">
- {#if item.kind==="image"}<img src={item.path} alt={item.name} loading="lazy" />{:else if item.kind==="audio"}<audio controls preload="none" src={item.path}></audio>{:else}<span class="pill">LRC 歌词</span>{/if}
+ {#if item.kind==="image"}<img src={item.path} alt={item.name} loading="lazy" onload={(e)=>{item.width=e.currentTarget.naturalWidth;item.height=e.currentTarget.naturalHeight;}} />{:else if item.kind==="audio"}<audio controls preload="none" src={item.path}></audio>{:else}<span class="pill">LRC 歌词</span>{/if}
  <strong>{item.name}</strong><small class="muted">{(item.size/1024).toFixed(1)} KiB {item.width?` · ${item.width} × ${item.height}`:""}</small><input aria-label="素材地址" readonly value={item.path} />
  {#if item.references?.length}<details><summary>被 {item.references.length} 处引用</summary>{#each item.references as ref}<p>{ref}</p>{/each}</details>{/if}
  <div class="row"><button onclick={()=>copy(item.path)}>复制地址</button><button disabled={busy||item.references?.length>0} onclick={()=>remove(item)}>删除</button></div></article>{/each}</div>

@@ -328,11 +328,19 @@
                     "type": "boolean",
                     "label": "新窗口打开"
                   }
-                }
+                },
+                "required": [
+                  "name",
+                  "url"
+                ]
               },
               "maxItems": 20
             }
-          }
+          },
+          "required": [
+            "name",
+            "url"
+          ]
         },
         "maxItems": 30
       }
@@ -437,7 +445,10 @@
                 }
               }
             }
-          }
+          },
+          "required": [
+            "type"
+          ]
         },
         "maxItems": 20
       },
@@ -511,7 +522,10 @@
                 }
               }
             }
-          }
+          },
+          "required": [
+            "type"
+          ]
         },
         "maxItems": 20
       },
@@ -585,7 +599,10 @@
                 }
               }
             }
-          }
+          },
+          "required": [
+            "type"
+          ]
         },
         "maxItems": 20
       }
@@ -716,7 +733,11 @@
                   "label": "歌词文本或地址",
                   "mediaKind": "lyrics"
                 }
-              }
+              },
+              "required": [
+                "name",
+                "url"
+              ]
             },
             "maxItems": 200
           }
@@ -814,7 +835,11 @@
           "type": "boolean",
           "label": "显示"
         }
-      }
+      },
+      "required": [
+        "title",
+        "siteurl"
+      ]
     },
     "maxItems": 200
   },
@@ -889,11 +914,19 @@
                 "type": "string",
                 "label": "图标或图片"
               }
-            }
+            },
+            "required": [
+              "title",
+              "url"
+            ]
           },
           "maxItems": 200
         }
-      }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
     },
     "maxItems": 50
   },
@@ -1135,7 +1168,10 @@
               "type": "boolean",
               "label": "启用"
             }
-          }
+          },
+          "required": [
+            "name"
+          ]
         },
         "maxItems": 20
       },
@@ -1164,7 +1200,10 @@
               "type": "string",
               "label": "日期"
             }
-          }
+          },
+          "required": [
+            "name"
+          ]
         },
         "maxItems": 200
       },
@@ -1264,7 +1303,11 @@
               "type": "boolean",
               "label": "显示名称"
             }
-          }
+          },
+          "required": [
+            "name",
+            "url"
+          ]
         },
         "maxItems": 30
       }
@@ -1303,9 +1346,17 @@
               "label": "地址",
               "format": "url"
             }
-          }
+          },
+          "required": [
+            "text",
+            "url"
+          ]
         },
         "maxItems": 20
+      },
+      "useThemeHTML": {
+        "type": "boolean",
+        "label": "显示主题附带的页脚说明"
       }
     }
   },
@@ -1445,7 +1496,11 @@
               },
               "maxItems": 500
             }
-          }
+          },
+          "required": [
+            "id",
+            "name"
+          ]
         },
         "maxItems": 100
       }

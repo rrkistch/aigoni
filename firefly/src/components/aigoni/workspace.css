@@ -13,7 +13,7 @@
 .aigoni button[aria-current=page],.aigoni button.primary{background:var(--primary);color:var(--card-bg)}
 .aigoni :is(input,textarea,select){width:100%;padding:.65rem .8rem;border-radius:.65rem;background:var(--page-bg);border:1px solid var(--line-divider);color:inherit}
 .aigoni :is(input,button,textarea,select,a):focus-visible{outline:2px solid var(--primary);outline-offset:3px}
-.aigoni input[type=checkbox]{width:1.1rem;height:1.1rem}
+.aigoni input[type=checkbox],.aigoni input[type=radio]{width:1.1rem;height:1.1rem;flex:none}
 .aigoni label{display:grid;gap:.35rem;font-size:.9rem}
 .aigoni .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
 .aigoni .stack{display:grid;gap:1rem}

@@ -142,7 +142,7 @@ func validateAIBase(raw string, allowPrivate bool) error {
 	if u.Scheme == "http" && !allowPrivate {
 		return errors.New("公网连接使用 HTTPS；内网 HTTP 服务需要明确开启内网访问。")
 	}
-	if ip, err := netip.ParseAddr(u.Hostname()); err == nil && !aiAllowedIP(ip, allowPrivate) {
+	if ip, err := netip.ParseAddr(u.Hostname()); err == nil && (!aiAllowedIP(ip, allowPrivate) || (u.Scheme == "http" && !aiIntranetIP(ip))) {
 		return errors.New("此地址不允许访问。")
 	}
 	return nil
@@ -153,7 +153,7 @@ func aiAllowedIP(ip netip.Addr, allowPrivate bool) bool {
 		return false
 	}
 	for _, p := range blockedCIDRs {
-		if p.Contains(ip) {
+		if p.Contains(ip) && (!allowPrivate || p.Bits() == 32) {
 			return false
 		}
 	}
@@ -174,7 +174,7 @@ func aiHTTPClient(p aiProvider, timeout time.Duration) *http.Client {
 			return nil, errors.New("model host DNS failed")
 		}
 		for _, ip := range ips {
-			if !aiAllowedIP(ip, p.AllowPrivate) {
+			if !aiAllowedIP(ip, p.AllowPrivate) || (strings.HasPrefix(p.BaseURL, "http://") && !aiIntranetIP(ip)) {
 				return nil, errors.New("model network address denied")
 			}
 		}
@@ -376,4 +376,9 @@ func (b *aiResponseBody) Read(p []byte) (int, error) {
 	n, err := b.ReadCloser.Read(p)
 	b.remaining -= int64(n)
 	return n, err
+}
+
+func aiIntranetIP(ip netip.Addr) bool {
+	ip = ip.Unmap()
+	return ip.IsPrivate() || ip.IsLoopback() || netip.MustParsePrefix("100.64.0.0/10").Contains(ip)
 }

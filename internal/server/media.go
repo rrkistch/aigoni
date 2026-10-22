@@ -300,7 +300,7 @@ func (s *Server) mediaAPI(w http.ResponseWriter, r *http.Request) {
 		}
 		b, e := os.ReadFile(filepath.Join(s.mediaRoot(), "index", file.Name()))
 		var item mediaItem
-		if e != nil || json.Unmarshal(b, &item) != nil {
+		if e != nil || json.Unmarshal(b, &item) != nil || !validMediaItem(item) || file.Name() != item.ID+".json" {
 			continue
 		}
 		item.References = s.mediaReferences(item.Path)
@@ -354,4 +354,13 @@ func (s *Server) serveMedia(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	}
 	http.ServeFile(w, r, name)
+}
+
+func validMediaItem(item mediaItem) bool {
+	if !safeRelease(item.ID) || item.Name == "" || len(item.Name) > 200 {
+		return false
+	}
+	name := filepath.Base(item.Path)
+	kind, limit := mediaKind(name)
+	return kind != "" && kind == item.Kind && item.Size > 0 && item.Size <= limit && item.Path == "/_media/"+name && strings.TrimSuffix(name, filepath.Ext(name)) == item.ID
 }

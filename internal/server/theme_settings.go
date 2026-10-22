@@ -21,6 +21,7 @@ import (
 var adminSchemaJSON []byte
 
 type adminField struct {
+	Required   []string              `json:"required,omitempty"`
 	Type       string                `json:"type"`
 	Label      string                `json:"label"`
 	Format     string                `json:"format,omitempty"`
@@ -46,6 +47,13 @@ func validateAdminValue(f adminField, v any, where string) error {
 		m, ok := v.(map[string]any)
 		if !ok {
 			return bad()
+		}
+		for _, key := range f.Required {
+			val, exists := m[key]
+			text, isText := val.(string)
+			if !exists || val == nil || (isText && strings.TrimSpace(text) == "") {
+				return fmt.Errorf("%s：%s 不能为空", where, f.Properties[key].Label)
+			}
 		}
 		for k, val := range m {
 			child, ok := f.Properties[k]

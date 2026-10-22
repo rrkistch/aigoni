@@ -58,3 +58,5 @@ if (aigoniSite) {
 }
 
 applyThemeGroup("profile", profileConfig);
+
+if(aigoniSite){const adminPath=aigoniSite.adminPath;if(!profileConfig.links.some(link=>link.url===adminPath))profileConfig.links.push({name:"工作区",url:adminPath,icon:"material-symbols:lock-outline",showName:true});}

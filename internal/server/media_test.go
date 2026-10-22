@@ -49,7 +49,7 @@ func TestMediaChunkUploadAndReferences(t *testing.T) {
 	if w = call("GET", item.Path, nil, false); w.Code != http.StatusOK || w.Body.String() != "helloworld" {
 		t.Fatal(w.Code, w.Body.String())
 	}
-	body, _ := json.Marshal(map[string]any{"revision": 0, "groups": map[string]any{"music": map[string]any{"local": map[string]any{"playlist": []any{map[string]any{"name": "test", "lrc": item.Path}}}}}})
+	body, _ := json.Marshal(map[string]any{"revision": 0, "groups": map[string]any{"music": map[string]any{"local": map[string]any{"playlist": []any{map[string]any{"name": "test", "url": "/music.mp3", "lrc": item.Path}}}}}})
 	if w = call("PATCH", "/api/admin/v1/theme-settings", body, true); w.Code != 200 {
 		t.Fatal(w.Code, w.Body.String())
 	}

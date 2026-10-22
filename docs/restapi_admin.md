@@ -811,3 +811,27 @@
 ### 私人附件
 
 位于配置的 notes_dir 下的附件与私人笔记一样要求管理员 Session。匿名读取返回 404；公开文章资源及原上传白名单行为保持不变。
+
+
+## 新手引导与备份恢复
+
+所有下列接口位于 `/api/admin/v1`，要求管理员 Session；写请求另需 `X-CSRF-Token`。上传为原始分块而非 JSON。
+
+- `GET /health`：检查应用站点状态，不调用 AI。
+- `GET /onboarding`：读取引导进度与 revision。
+- `PATCH /onboarding`：保存 step/completed；要求 revision。
+- `POST /onboarding/samples`：选择 keep/clear；要求 revision、mode、confirm:true。
+- `GET /backups`：读取备份任务与 recovery_required。
+- `POST /backups`：排队创建一致性数据备份。
+- `GET /backups/items/{id}`：读取任务状态。
+- `DELETE /backups/items/{id}`：删除非活动备份及暂存文件。
+- `GET /backups/items/{id}/download`：下载管理员私有备份文件。
+- `POST /backups/items/{id}/restore`：要求 confirm:true；创建安全备份后恢复已验证数据。
+- `POST /backups/items/{id}/validate`：重新验证恢复包，不改当前数据。
+- `POST /backups/recover`：要求 confirm:true；恢复中断的文件事务。
+- `POST /backups/uploads`：创建上传；要求 name 和 size，最大 4 GiB。
+- `GET /backups/uploads/{id}`：查询续传 offset。
+- `PUT /backups/uploads/{id}`：写入最多 8 MiB 原始分块；要求查询参数 offset。
+- `POST /backups/uploads/{id}/complete`：完成上传并启动校验。
+
+备份与恢复为异步任务，应轮询状态；恢复后仍需查询 site-build 确认公开上线。恢复接口拒绝校验后发生的数据变更；需重新验证，不可盲目重试恢复。备份仅供登录下载，包含私人内容，不包含密钥。操作教程见 [建站引导与数据恢复](backup-and-onboarding.md)。

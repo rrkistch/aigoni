@@ -2,7 +2,7 @@
 import {getCollection,render} from "astro:content";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import Markdown from "@/components/common/Markdown.astro";
-export async function getStaticPaths(){return (await getCollection("aigoniPages")).map(entry=>({params:{slug:entry.id},props:{entry}}));}
+export async function getStaticPaths(){return (await getCollection("aigoniPages")).filter(entry=>entry.id!=="about").map(entry=>({params:{slug:entry.id},props:{entry}}));}
 const {entry}=Astro.props;
 const {Content,headings}=await render(entry);
 ---
