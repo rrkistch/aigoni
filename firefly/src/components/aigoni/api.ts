@@ -40,14 +40,20 @@ export async function eventStream(id:string,from:number,signal:AbortSignal,onEve
 
 export async function uploadMedia(file:File,onProgress:(percent:number)=>void):Promise<any>{return uploadFile("/media/uploads","aigoni-media-upload:",file,onProgress);}
 export async function uploadBackup(file:File,onProgress:(percent:number)=>void):Promise<any>{return uploadFile("/backups/uploads","aigoni-backup-upload:",file,onProgress);}
-async function uploadFile(endpoint:string,prefix:string,file:File,onProgress:(percent:number)=>void):Promise<any>{
+export async function uploadTheme(file:File,onProgress:(percent:number)=>void,signal?:AbortSignal,onState?:(value:any)=>void):Promise<any>{
+ const tag=file.name.match(/^aigoni-(theme-v[0-9]+\.[0-9]+\.[0-9]+)-linux-amd64\.tar\.gz$/)?.[1];
+ if(!tag)throw new Error("请选择本项目发布的 aigoni-theme-v版本-linux-amd64.tar.gz 文件。");
+ return uploadFile("/theme/uploads","aigoni-theme-upload:",file,onProgress,{tag},signal,onState);
+}
+async function uploadFile(endpoint:string,prefix:string,file:File,onProgress:(percent:number)=>void,extra:Record<string,string>={},signal?:AbortSignal,onState?:(value:any)=>void):Promise<any>{
  const key=prefix+file.name+":"+file.size+":"+file.lastModified;
  let upload:any=null;const prior=sessionStorage.getItem(key);
  if(prior){try{upload=await api(endpoint+"/"+prior);}catch{sessionStorage.removeItem(key);}}
- if(!upload){upload=await api(endpoint,"POST",{name:file.name,size:file.size});sessionStorage.setItem(key,upload.id);}
+ if(!upload){upload=await api(endpoint,"POST",{name:file.name,size:file.size,...extra});sessionStorage.setItem(key,upload.id);}
+ onState?.(upload);
  while(upload.offset<file.size){
   const end=Math.min(upload.offset+8*1024*1024,file.size);
-  const response=await fetch(base+endpoint+"/"+upload.id+"?offset="+upload.offset,{method:"PUT",credentials:"same-origin",headers:{"X-CSRF-Token":csrf,"Content-Type":"application/octet-stream"},body:file.slice(upload.offset,end)});
+  const response=await fetch(base+endpoint+"/"+upload.id+"?offset="+upload.offset,{method:"PUT",credentials:"same-origin",headers:{"X-CSRF-Token":csrf,"Content-Type":"application/octet-stream"},body:file.slice(upload.offset,end),signal});
   if(response.status===401)window.dispatchEvent(new Event("aigoni-session-expired"));
   let data;try{data=await response.json();}catch{throw new Error(`上传返回 HTTP ${response.status}，请检查反向代理上传限制或重新连接。`);}
   if(!response.ok)throw new Error(data.error?.message||"上传失败，请重新选择同一文件继续。");upload=data;onProgress(Math.round(upload.offset/file.size*100));

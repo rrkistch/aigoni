@@ -1,0 +1,47 @@
+name: Independent theme
+on:
+  push:
+    tags: ['theme-v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing theme-vMAJOR.MINOR.PATCH tag
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: theme-release
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          persist-credentials: false
+      - name: Validate release identity
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          [[ "$TAG" =~ ^theme-v[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+          test "$(git rev-parse HEAD)" = "$(git rev-list -n 1 "$TAG")"
+          echo "THEME_TAG=$TAG" >> "$GITHUB_ENV"
+          echo "SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Check and package Linux amd64 theme (installed dependencies included)
+        run: |
+          docker build --platform linux/amd64 -f deploy/theme/Dockerfile \
+            --build-arg THEME_VERSION="$THEME_TAG" --build-arg SOURCE_COMMIT="$SOURCE_COMMIT" \
+            --output type=local,dest=.theme-artifacts .
+      - name: Publish versioned package and checksum
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$THEME_TAG" --verify-tag --title "Firefly theme $THEME_TAG" \
+            --notes "Linux amd64 / Node 24 / pnpm 11.22.0. Install through the aigoni theme update page. Source: $SOURCE_COMMIT. Backend image is not changed by this theme release." \
+            .theme-artifacts/*.tar.gz .theme-artifacts/SHA256SUMS
+          echo "Published theme: $THEME_TAG ($SOURCE_COMMIT)" >> "$GITHUB_STEP_SUMMARY"

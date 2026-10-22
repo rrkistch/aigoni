@@ -8,6 +8,7 @@ let themeRevision=0,themeGroups={};
 let setupState={revision:0,step:0,completed:false,sample_mode:"",imported:false,suggested:false,samples:["示例动态、项目和关于页"]};
 let siteSettings={site:{name:"Aigoni",author:"作者",description:"个人博客",base_url:"https://example.com",logo:"",author_avatar:"",utc_offset:"+08:00"},pagination:{posts_per_page:10,home_posts_count:10},paths:{}};
 let backupItems=[];
+let themeInstall={upload:null,current:"",previous:"",pending:"",build:{status:"published"},supported:true,platform:"linux/amd64",repository:"https://github.com/rrkistch/aigoni",maintenance_url:"/studio/maintenance"};
 let aiState={revision:0,default_provider:"",source:"environment",providers:[]};
 const evidence=path.resolve(process.env.FIREFLY_TEST_EVIDENCE||"../.firefly/evidence");
 (async()=>{
@@ -46,6 +47,11 @@ const evidence=path.resolve(process.env.FIREFLY_TEST_EVIDENCE||"../.firefly/evid
     if(method==="PATCH"){const body=req.postDataJSON();assert.equal(body.revision,themeRevision);Object.assign(themeGroups,body.groups);themeRevision++;}
     data={revision:themeRevision,groups:themeGroups,effective:{...defaults,...themeGroups},defaults,schema,saved:true,build_status:"queued"};
    }
+   else if(p==="/theme")data=themeInstall;
+   else if(p==="/theme/uploads"&&method==="POST"){const input=req.postDataJSON();assert.equal(input.tag,"theme-v0.1.0");themeInstall.upload={...input,id:"theme-upload-fixture",offset:0,status:"uploading"};data=themeInstall.upload;}
+   else if(p==="/theme/uploads/theme-upload-fixture"&&method==="PUT"){themeInstall.upload.offset+=req.postDataBuffer().length;data=themeInstall.upload;}
+   else if(p==="/theme/uploads/theme-upload-fixture/complete"){themeInstall.upload.status="ready";themeInstall.upload.manifest={source_commit:"a".repeat(40),node_major:24,settings:1};data=themeInstall.upload;}
+   else if(p==="/theme/activate"){assert.equal(req.postDataJSON().version,themeInstall.upload.tag);themeInstall.current=themeInstall.upload.tag;data={saved:true,published:false};}
    else if(p==="/backups"){
     if(method==="POST")backupItems=[{id:"backup-fixture",kind:"backup",status:"ready",size:1024,created:new Date().toISOString(),manifest:{created:new Date().toISOString(),bytes:2048,roots:{posts:true,notes:true},excludes:["API keys"]}}];
     data={items:backupItems,recovery_required:false,maintenance_url:"/studio/maintenance"};
@@ -171,9 +177,16 @@ const evidence=path.resolve(process.env.FIREFLY_TEST_EVIDENCE||"../.firefly/evid
    await page.screenshot({path:path.join(evidence,"maintenance-"+label+".png")});
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),"maintenance overflow");
   }
+  await app.getByRole("button",{name:"主题更新",exact:true}).click();
+  await app.getByRole("heading",{name:"主题更新",exact:true}).waitFor();
+  await app.getByLabel("选择主题包",{exact:true}).setInputFiles({name:"aigoni-theme-v0.1.0-linux-amd64.tar.gz",mimeType:"application/gzip",buffer:Buffer.from("theme-ui-fixture")});
+  await app.getByRole("button",{name:"构建并启用此主题",exact:true}).waitFor();
+  await app.getByRole("button",{name:"构建并启用此主题",exact:true}).click();
+  await app.getByText("theme-v0.1.0",{exact:true}).waitFor();
+  await page.screenshot({path:path.join(evidence,"theme-update-mobile.png")});
   await app.getByRole("button",{name:"退出",exact:true}).click();
   await app.getByLabel("管理员密码").waitFor();assert.equal(authenticated,false);
   assert.deepEqual(errors,[]);
-  console.log("PASS public search, login, CSRF, create, conflict retention, Wiki, AI stream, responsive themes, AI configuration, theme/music editing, onboarding, maintenance, logout");
+  console.log("PASS public search, login, CSRF, create, conflict retention, Wiki, AI stream, responsive themes, AI configuration, theme/music editing, onboarding, maintenance, theme package upload, logout");
  }catch(error){const current=browser.contexts()[0]?.pages()[0];if(current){fs.mkdirSync(evidence,{recursive:true});await current.screenshot({path:path.join(evidence,"browser-failure.png")});console.error((await current.locator(".aigoni").innerText()).slice(-5000));}throw error;}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(e=>{console.error(e);process.exit(1);});

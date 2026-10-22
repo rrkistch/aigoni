@@ -54,6 +54,11 @@ func (s *Server) validateBackupData(stage string, manifest sitebackup.Manifest) 
 		if err != nil {
 			return err
 		}
+		if s.activeThemeVersion() != "source" {
+			if err = validateThemeOverrides(s.activeThemeSource(), doc.Value); err != nil {
+				return err
+			}
+		}
 		for name, value := range doc.Value {
 			field, ok := adminSchema()[name]
 			if !ok {

@@ -16,36 +16,38 @@ import (
 )
 
 type Server struct {
-	maintenanceMu   sync.RWMutex
-	restoreMu       sync.RWMutex
-	restoreBlocked  atomic.Bool
-	backupMu        sync.Mutex
-	backupStateMu   sync.Mutex
-	backupActive    string
-	onboardingMu    sync.Mutex
-	previewContext  context.Context
-	previewMu       sync.Mutex
-	previewActive   bool
-	mediaMu         sync.Mutex
-	themeMu         sync.Mutex
-	aiMu            sync.Mutex
-	aiWriteRunner   agent.Runner
-	aiReadRunner    agent.Runner
-	aiWriteVersion  string
-	aiReadVersion   string
-	siteBuild       *siteBuilder
-	cfg             *config.Config
-	env             *config.Env
-	repo            *content.Repository
-	auth            *auth.Manager
-	root            string
-	webFrontendFS   fs.FS
-	adminFrontendFS fs.FS
-	wikiMu          sync.Mutex
-	settingsMu      sync.Mutex
-	wikiWriteMu     sync.Mutex
-	wikiAgentMu     sync.Mutex
-	wikiAgentRunner agent.Runner
+	themeInstallMu     sync.Mutex
+	themeInstallCancel context.CancelFunc
+	maintenanceMu      sync.RWMutex
+	restoreMu          sync.RWMutex
+	restoreBlocked     atomic.Bool
+	backupMu           sync.Mutex
+	backupStateMu      sync.Mutex
+	backupActive       string
+	onboardingMu       sync.Mutex
+	previewContext     context.Context
+	previewMu          sync.Mutex
+	previewActive      bool
+	mediaMu            sync.Mutex
+	themeMu            sync.Mutex
+	aiMu               sync.Mutex
+	aiWriteRunner      agent.Runner
+	aiReadRunner       agent.Runner
+	aiWriteVersion     string
+	aiReadVersion      string
+	siteBuild          *siteBuilder
+	cfg                *config.Config
+	env                *config.Env
+	repo               *content.Repository
+	auth               *auth.Manager
+	root               string
+	webFrontendFS      fs.FS
+	adminFrontendFS    fs.FS
+	wikiMu             sync.Mutex
+	settingsMu         sync.Mutex
+	wikiWriteMu        sync.Mutex
+	wikiAgentMu        sync.Mutex
+	wikiAgentRunner    agent.Runner
 	// wikiAgentAskRunner is the dedicated read-only runner for machine Wiki
 	// Ask runs. It is built with agent.Config{ReadOnly:true} and never has the
 	// write tool, unlike the write-capable browser-admin wikiAgentRunner.
@@ -89,6 +91,7 @@ func NewWithFrontendFS(root string, cfg *config.Config, env *config.Env, webFron
 		s.recoverPreviews()
 	}
 	s.recoverBackupTasks()
+	s.recoverThemeInstall()
 	return s
 }
 

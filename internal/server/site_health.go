@@ -1,7 +1,6 @@
 package server
 
 import (
-	"aigoni/internal/config"
 	"aigoni/internal/sitebackup"
 	"encoding/json"
 	"net/http"
@@ -88,11 +87,8 @@ func (s *Server) siteHealthAPI(w http.ResponseWriter, r *http.Request) {
 	}
 	theme := map[string]string{"mode": s.env.FrontendMode, "version": "未启用"}
 	if s.env.FrontendMode == "firefly" {
-		source := s.env.FireflySourceDir
-		if source == "" {
-			source = "firefly"
-		}
-		b, e := os.ReadFile(filepath.Join(config.Abs(s.root, source), "package.json"))
+		source := s.activeThemeSource()
+		b, e := os.ReadFile(filepath.Join(source, "package.json"))
 		var pkg struct {
 			Version string `json:"version"`
 		}
@@ -101,7 +97,15 @@ func (s *Server) siteHealthAPI(w http.ResponseWriter, r *http.Request) {
 		} else {
 			theme["version"] = "源码不可用"
 		}
-		theme["distribution"] = "bundled"
+		theme["distribution"] = "source"
+		if s.siteBuild != nil {
+			s.siteBuild.mu.Lock()
+			if s.siteBuild.state.Theme != "" && s.siteBuild.state.Theme != "source" {
+				theme["distribution"] = "package"
+				theme["version"] = s.siteBuild.state.Theme
+			}
+			s.siteBuild.mu.Unlock()
+		}
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	writeAdminJSON(w, 200, map[string]any{"checks": checks, "free_bytes": free, "build": build, "theme": theme, "ai_configured": s.wikiReady(), "maintenance_url": s.adminURL("maintenance")})

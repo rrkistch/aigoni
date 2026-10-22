@@ -13,7 +13,6 @@ import (
 	"sort"
 	"strings"
 
-	"aigoni/internal/config"
 	"aigoni/internal/configdoc"
 )
 
@@ -144,11 +143,8 @@ func (s *Server) publicThemeSettings() (map[string]any, error) {
 	return d.Value, err
 }
 func (s *Server) themeDefaults() map[string]any {
-	source := s.env.FireflySourceDir
-	if source == "" {
-		source = "firefly"
-	}
-	b, err := os.ReadFile(filepath.Join(config.Abs(s.root, source), "aigoni-defaults.json"))
+	source := s.activeThemeSource()
+	b, err := os.ReadFile(filepath.Join(source, "aigoni-defaults.json"))
 	if err != nil {
 		return map[string]any{}
 	}
@@ -254,6 +250,10 @@ func (s *Server) themeSettingsAPI(w http.ResponseWriter, r *http.Request) {
 		writeAdminError(w, 409, "revision_conflict", "设置已被其他页面修改，请重新加载。")
 		return
 	}
+	if errors.Is(err, errThemeIncompatible) {
+		writeAdminError(w, 409, "theme_incompatible", err.Error())
+		return
+	}
 	if err != nil {
 		writeAdminError(w, 500, "theme_save_failed", "外观设置保存失败。")
 		return
@@ -296,6 +296,8 @@ func safeContactURL(value string) bool {
 	return safeConfigURL(value)
 }
 
+var errThemeIncompatible = errors.New("theme configuration incompatible")
+
 // changeThemeSettings is the revision-checked write boundary shared by admin, history and future MCP approvals.
 func (s *Server) changeThemeSettings(expected uint64, groups map[string]any) (configdoc.Document[map[string]any], error) {
 	schema := adminSchema()
@@ -333,6 +335,24 @@ func (s *Server) changeThemeSettings(expected uint64, groups map[string]any) (co
 			err = configdoc.Atomic(filepath.Join(s.root, ".aigoni-admin", "theme-history", fmt.Sprintf("%020d.json", d.Revision)), b)
 		}
 		if err == nil {
+			if s.siteBuild != nil {
+				s.siteBuild.mu.Lock()
+				version := s.siteBuild.state.Theme
+				candidate := s.siteBuild.state.PendingTheme
+				s.siteBuild.mu.Unlock()
+				for _, v := range []string{version, candidate} {
+					if v != "" && v != "source" {
+						source, e := s.themeSource(v)
+						if e == nil {
+							e = validateThemeOverrides(source, next)
+						}
+						if e != nil {
+							s.themeMu.Unlock()
+							return d, fmt.Errorf("%w: %v", errThemeIncompatible, e)
+						}
+					}
+				}
+			}
 			d, err = configdoc.Write(s.themeSettingsPath(), d, expected, next)
 		}
 		if err == nil {

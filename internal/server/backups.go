@@ -162,7 +162,7 @@ func (s *Server) backupsAPI(w http.ResponseWriter, r *http.Request) {
 		if err := s.saveBackup(*state); err != nil {
 			return err
 		}
-		manifest, err := sitebackup.Create(s.root, targets, s.backupFile(state.ID))
+		manifest, err := sitebackup.Create(s.root, targets, s.backupFile(state.ID), s.activeThemeVersion())
 		if err != nil {
 			return err
 		}
@@ -441,7 +441,7 @@ func (s *Server) backupRestoreAPI(w http.ResponseWriter, r *http.Request) {
 		if err := s.saveBackup(*state); err != nil {
 			return err
 		}
-		manifest, err := sitebackup.Create(s.root, targets, s.backupFile(safetyID))
+		manifest, err := sitebackup.Create(s.root, targets, s.backupFile(safetyID), s.activeThemeVersion())
 		if err != nil {
 			return err
 		}

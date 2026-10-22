@@ -4,6 +4,19 @@ on:
   push:
     branches: [main]
     tags: ['container-v*']
+    paths:
+      - 'Dockerfile'
+      - '*.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'internal/**'
+      - 'cmd/**'
+      - 'frontend/**'
+      - 'deploy/docker/**'
+      - 'docs/openapi.yaml'
+      - 'config.yaml.example'
+      - '.env.example'
+      - '.github/workflows/container.yml'
   workflow_dispatch:
 
 permissions:

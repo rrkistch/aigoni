@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"aigoni/internal/config"
 	"aigoni/internal/configdoc"
 	"aigoni/internal/content"
 	"gopkg.in/yaml.v3"
@@ -102,11 +101,7 @@ func (s *Server) onboardingSamplesAPI(w http.ResponseWriter, r *http.Request) {
 	}
 	changed, skipped := 0, 0
 	if req.Mode == "keep" && !d.Value.Imported {
-		source := s.env.FireflySourceDir
-		if source == "" {
-			source = "firefly"
-		}
-		source = config.Abs(s.root, source)
+		source := s.activeThemeSource()
 		for _, group := range []struct {
 			folder string
 			typ    content.Type

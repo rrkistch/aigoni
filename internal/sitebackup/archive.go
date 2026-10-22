@@ -27,11 +27,12 @@ type Target struct {
 	File bool
 }
 type Manifest struct {
-	Version  int             `json:"version"`
-	Created  time.Time       `json:"created"`
-	Bytes    int64           `json:"bytes"`
-	Roots    map[string]bool `json:"roots"`
-	Excludes []string        `json:"excludes"`
+	ThemeVersion string          `json:"theme_version,omitempty"`
+	Version      int             `json:"version"`
+	Created      time.Time       `json:"created"`
+	Bytes        int64           `json:"bytes"`
+	Roots        map[string]bool `json:"roots"`
+	Excludes     []string        `json:"excludes"`
 }
 
 func Within(root, target string) bool {
@@ -70,11 +71,14 @@ func ValidateTargets(root string, targets []Target) error {
 	}
 	return nil
 }
-func Create(root string, targets []Target, out string) (manifest Manifest, err error) {
+func Create(root string, targets []Target, out string, themeVersion ...string) (manifest Manifest, err error) {
 	if err = ValidateTargets(root, targets); err != nil {
 		return
 	}
 	manifest = Manifest{Version: 1, Created: time.Now().UTC(), Roots: map[string]bool{}, Excludes: []string{"API keys", "sessions", "assistant credentials", "theme dependencies", "generated website"}}
+	if len(themeVersion) > 0 {
+		manifest.ThemeVersion = themeVersion[0]
+	}
 	type entry struct {
 		file, name string
 		info       os.FileInfo

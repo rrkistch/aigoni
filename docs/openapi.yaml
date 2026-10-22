@@ -12,6 +12,186 @@ tags:
   - name: Machine API
   - name: Admin API
 paths:
+  /api/admin/v1/theme:
+    get:
+      tags: [Admin API]
+      summary: "读取当前、上一、候选主题、兼容状态和构建状态"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200": {description: Operation result}
+        "201": {description: Upload created}
+        "202": {description: Task queued; not yet published}
+        "401": {description: Admin login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Busy or incompatible theme}
+        "507": {description: Insufficient storage}
+  /api/admin/v1/theme/uploads:
+    post:
+      tags: [Admin API]
+      summary: "创建主题上传；tag、name、size；最大1GiB，仅Linux amd64"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        content:
+          application/json:
+            schema: {"type": "object", "required": ["tag", "name", "size"], "properties": {"tag": {"type": "string", "pattern": "^theme-v[0-9]+\\.[0-9]+\\.[0-9]+$"}, "name": {"type": "string"}, "size": {"type": "integer", "minimum": 1, "maximum": 1073741824}}}
+      responses:
+        "200": {description: Operation result}
+        "201": {description: Upload created}
+        "202": {description: Task queued; not yet published}
+        "401": {description: Admin login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Busy or incompatible theme}
+        "507": {description: Insufficient storage}
+  /api/admin/v1/theme/uploads/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: {type: string}
+    get:
+      tags: [Admin API]
+      summary: "查询主题上传续传进度"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+      responses:
+        "200": {description: Operation result}
+        "201": {description: Upload created}
+        "202": {description: Task queued; not yet published}
+        "401": {description: Admin login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Busy or incompatible theme}
+        "507": {description: Insufficient storage}
+    put:
+      tags: [Admin API]
+      summary: "写入最多8MiB原始分块，查询参数offset"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      parameters:
+        - in: query
+          name: offset
+          required: true
+          schema: {type: integer, minimum: 0}
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema: {type: string, format: binary}
+      responses:
+        "200": {description: Operation result}
+        "201": {description: Upload created}
+        "202": {description: Task queued; not yet published}
+        "401": {description: Admin login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Busy or incompatible theme}
+        "507": {description: Insufficient storage}
+    delete:
+      tags: [Admin API]
+      summary: "取消上传或校验"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      responses:
+        "200": {description: Operation result}
+        "201": {description: Upload created}
+        "202": {description: Task queued; not yet published}
+        "401": {description: Admin login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Busy or incompatible theme}
+        "507": {description: Insufficient storage}
+  /api/admin/v1/theme/uploads/{id}/complete:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: {type: string}
+    post:
+      tags: [Admin API]
+      summary: "校验固定仓库正式发布信息、SHA256、清单及解压边界"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        content:
+          application/json:
+            schema: {"type": "object"}
+      responses:
+        "200": {description: Operation result}
+        "201": {description: Upload created}
+        "202": {description: Task queued; not yet published}
+        "401": {description: Admin login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Busy or incompatible theme}
+        "507": {description: Insufficient storage}
+  /api/admin/v1/theme/activate:
+    post:
+      tags: [Admin API]
+      summary: "要求version；按当前内容和设置构建，成功才原子启用"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        content:
+          application/json:
+            schema: {"type": "object", "required": ["version"], "properties": {"version": {"type": "string"}}}
+      responses:
+        "200": {description: Operation result}
+        "201": {description: Upload created}
+        "202": {description: Task queued; not yet published}
+        "401": {description: Admin login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Busy or incompatible theme}
+        "507": {description: Insufficient storage}
+  /api/admin/v1/theme/rollback:
+    post:
+      tags: [Admin API]
+      summary: "用上一主题重建当前内容，不恢复旧静态页面"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        content:
+          application/json:
+            schema: {"type": "object"}
+      responses:
+        "200": {description: Operation result}
+        "201": {description: Upload created}
+        "202": {description: Task queued; not yet published}
+        "401": {description: Admin login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Busy or incompatible theme}
+        "507": {description: Insufficient storage}
+  /api/admin/v1/theme/cancel:
+    post:
+      tags: [Admin API]
+      summary: "取消待切换主题并重新排队当前主题构建"
+      x-implementation-status: implemented
+      security:
+        - AdminSession: []
+          CSRFToken: []
+      requestBody:
+        content:
+          application/json:
+            schema: {"type": "object"}
+      responses:
+        "200": {description: Operation result}
+        "201": {description: Upload created}
+        "202": {description: Task queued; not yet published}
+        "401": {description: Admin login required}
+        "403": {description: CSRF rejected}
+        "409": {description: Busy or incompatible theme}
+        "507": {description: Insufficient storage}
   /api/admin/v1/health:
     get:
       tags: [Admin API]

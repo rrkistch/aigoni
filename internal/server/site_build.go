@@ -22,6 +22,7 @@ import (
 
 	"aigoni/internal/config"
 	"aigoni/internal/content"
+	"aigoni/internal/themebundle"
 )
 
 type fireflyPost struct {
@@ -41,6 +42,7 @@ type fireflyPost struct {
 	Body        string         `json:"body"`
 }
 type fireflySnapshot struct {
+	ThemeVersion   string         `json:"theme_version,omitempty"`
 	PrivatePreview bool           `json:"private_preview,omitempty"`
 	Dynamics       []fireflyPost  `json:"dynamics,omitempty"`
 	Projects       []fireflyPost  `json:"projects,omitempty"`
@@ -51,6 +53,9 @@ type fireflySnapshot struct {
 	AdminPath      string         `json:"adminPath"`
 }
 type siteBuildStatus struct {
+	Theme             string    `json:"theme,omitempty"`
+	PreviousTheme     string    `json:"previous_theme,omitempty"`
+	PendingTheme      string    `json:"pending_theme,omitempty"`
 	Enabled           bool      `json:"enabled"`
 	Status            string    `json:"status"`
 	Revision          uint64    `json:"revision"`
@@ -61,6 +66,7 @@ type siteBuildStatus struct {
 	UpdatedAt         time.Time `json:"updated_at"`
 }
 type siteBuilder struct {
+	cancel    context.CancelFunc
 	aliases   map[string]string
 	buildMu   sync.Mutex
 	mu        sync.Mutex
@@ -82,15 +88,23 @@ func newSiteBuilder(s *Server) *siteBuilder {
 	data, err := os.ReadFile(filepath.Join(b.root, "state.json"))
 	if err == nil {
 		var state siteBuildStatus
-		if json.Unmarshal(data, &state) == nil && safeRelease(state.Active) {
-			if _, err := os.Stat(filepath.Join(b.root, "releases", state.Active, "index.html")); err == nil {
-				b.state = state
-				b.state.Enabled = true
-				b.published, err = os.ReadFile(filepath.Join(b.root, "snapshots", state.Active+".json"))
-				if err != nil || !json.Valid(b.published) {
-					b.published = nil
+		validTheme := func(v string) bool { return v == "" || v == "source" || themebundle.TagPattern.MatchString(v) }
+		if json.Unmarshal(data, &state) == nil && validTheme(state.Theme) && validTheme(state.PreviousTheme) && validTheme(state.PendingTheme) {
+			b.state = state
+			b.state.Enabled = true
+			if safeRelease(state.Active) {
+				if _, err := os.Stat(filepath.Join(b.root, "releases", state.Active, "index.html")); err == nil {
+					b.published, err = os.ReadFile(filepath.Join(b.root, "snapshots", state.Active+".json"))
+					if err != nil || !json.Valid(b.published) {
+						b.published = nil
+						b.state.Blocked = true
+					}
+				} else {
+					b.state.Active = ""
 					b.state.Blocked = true
 				}
+			} else {
+				b.state.Active = ""
 			}
 		}
 	}
@@ -165,6 +179,14 @@ func (s *Server) publicSnapshot() ([]byte, error) {
 		return nil, err
 	}
 	snap.Site["use_theme_examples"] = setup.Value.SampleMode != "clear"
+	if s.siteBuild != nil {
+		s.siteBuild.mu.Lock()
+		snap.ThemeVersion = s.siteBuild.state.Theme
+		if s.siteBuild.state.PendingTheme != "" {
+			snap.ThemeVersion = s.siteBuild.state.PendingTheme
+		}
+		s.siteBuild.mu.Unlock()
+	}
 	return json.Marshal(snap)
 }
 func withdrawn(old, new []byte) bool {
@@ -268,6 +290,7 @@ func (s *Server) StartSiteBuild(ctx context.Context) {
 	// Containers opt in so a new image refreshes the theme even with unchanged content.
 	_ = s.queueSiteBuild(s.env.FireflyRebuildOnStart)
 	go s.siteBuildLoop(ctx)
+	go s.themeMaintenance(ctx)
 	// Reconcile external Markdown/config edits without putting private data into snapshots.
 	go func() {
 		ticker := time.NewTicker(5 * time.Second)
@@ -313,7 +336,13 @@ func (s *Server) siteBuildLoop(ctx context.Context) {
 		if err == nil {
 			b.buildMu.Lock()
 			job, cancel := context.WithTimeout(ctx, 15*time.Minute)
+			b.mu.Lock()
+			b.cancel = cancel
+			b.mu.Unlock()
 			err = b.run(job, input, output)
+			b.mu.Lock()
+			b.cancel = nil
+			b.mu.Unlock()
 			b.buildMu.Unlock()
 			cancel()
 		}
@@ -326,7 +355,13 @@ func (s *Server) siteBuildLoop(ctx context.Context) {
 		// Recheck the public snapshot before activation, including out-of-band file edits.
 		_ = s.queueSiteBuild(false)
 		b.mu.Lock()
-		if rev != b.state.Revision {
+		var built fireflySnapshot
+		_ = json.Unmarshal(data, &built)
+		desired := b.state.Theme
+		if b.state.PendingTheme != "" {
+			desired = b.state.PendingTheme
+		}
+		if rev != b.state.Revision || built.ThemeVersion != desired {
 			b.state.Status = "queued"
 			b.mu.Unlock()
 			continue
@@ -337,6 +372,16 @@ func (s *Server) siteBuildLoop(ctx context.Context) {
 			b.state.Error = "构建失败；内容已保存。请查看服务器构建日志后重试。"
 		} else {
 			previous := b.state
+			if built.ThemeVersion != b.state.Theme {
+				b.state.PreviousTheme = b.state.Theme
+				if b.state.PreviousTheme == "" {
+					b.state.PreviousTheme = "source"
+				}
+				b.state.Theme = built.ThemeVersion
+			}
+			if b.state.PendingTheme == built.ThemeVersion {
+				b.state.PendingTheme = ""
+			}
 			b.state.Active = release
 			b.state.PublishedRevision = rev
 			b.state.Status = "published"
@@ -355,14 +400,27 @@ func (s *Server) siteBuildLoop(ctx context.Context) {
 		b.state.UpdatedAt = time.Now().UTC()
 		_ = b.persist()
 		b.mu.Unlock()
+		s.cleanupThemeVersions()
 	}
 }
 func (s *Server) runFireflyBuild(ctx context.Context, input, output string) error {
-	source := s.env.FireflySourceDir
-	if source == "" {
-		source = "firefly"
+	raw, err := os.ReadFile(input)
+	if err != nil {
+		return err
 	}
-	source = config.Abs(s.root, source)
+	var snapshot fireflySnapshot
+	if err = json.Unmarshal(raw, &snapshot); err != nil {
+		return err
+	}
+	source, err := s.prepareThemeWork(ctx, snapshot.ThemeVersion)
+	if err != nil {
+		return err
+	}
+	if snapshot.ThemeVersion != "" && snapshot.ThemeVersion != "source" {
+		if err = validateThemeOverrides(source, snapshot.Theme); err != nil {
+			return err
+		}
+	}
 	node := s.env.FireflyNode
 	if node == "" {
 		node = "node"
@@ -444,6 +502,10 @@ func (s *Server) serveFirefly(w http.ResponseWriter, r *http.Request, admin bool
 	state := b.state
 	aliasTarget := b.aliases[strings.TrimSuffix(r.URL.Path, "/")]
 	b.mu.Unlock()
+	if state.Active == "" && admin {
+		http.Redirect(w, r, s.adminURL("maintenance"), http.StatusTemporaryRedirect)
+		return
+	}
 	if state.Active == "" && !strings.HasPrefix(r.URL.Path, "/_firefly/preview-") {
 		http.Error(w, "Firefly 首次构建尚未完成，请在管理后台检查构建状态。", 503)
 		return

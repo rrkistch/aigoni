@@ -19,6 +19,8 @@
 !deploy/
 !deploy/docker/
 !deploy/docker/**
+!deploy/theme/
+!deploy/theme/**
 
 **/.git
 **/.agents

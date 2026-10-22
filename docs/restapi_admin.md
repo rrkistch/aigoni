@@ -835,3 +835,20 @@
 - `POST /backups/uploads/{id}/complete`：完成上传并启动校验。
 
 备份与恢复为异步任务，应轮询状态；恢复后仍需查询 site-build 确认公开上线。恢复接口拒绝校验后发生的数据变更；需重新验证，不可盲目重试恢复。备份仅供登录下载，包含私人内容，不包含密钥。操作教程见 [建站引导与数据恢复](backup-and-onboarding.md)。
+
+
+## 独立主题
+
+仅允许管理员 Session；写操作继续要求 CSRF。
+
+- `GET /api/admin/v1/theme`：读取当前、上一、候选主题、兼容状态和构建状态。
+- `POST /api/admin/v1/theme/uploads`：创建主题上传；tag、name、size；最大1GiB，仅Linux amd64。
+- `GET /api/admin/v1/theme/uploads/{id}`：查询主题上传续传进度。
+- `PUT /api/admin/v1/theme/uploads/{id}`：写入最多8MiB原始分块，查询参数offset。
+- `DELETE /api/admin/v1/theme/uploads/{id}`：取消上传或校验。
+- `POST /api/admin/v1/theme/uploads/{id}/complete`：校验固定仓库正式发布信息、SHA256、清单及解压边界。
+- `POST /api/admin/v1/theme/activate`：要求version；按当前内容和设置构建，成功才原子启用。
+- `POST /api/admin/v1/theme/rollback`：用上一主题重建当前内容，不恢复旧静态页面。
+- `POST /api/admin/v1/theme/cancel`：取消待切换主题并重新排队当前主题构建。
+
+主题上传与校验不会启用主题。启用、回退返回202仅表示排队；须轮询 GET /theme 或 site-build，确认 theme 与 published_revision。包内声明不是信任来源；固定仓库 GitHub Release 的文件摘要和大小必须匹配。不提供自定义来源绕过校验。
