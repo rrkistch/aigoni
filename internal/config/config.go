@@ -77,6 +77,15 @@ type Env struct {
 	WikiAgentConcurrency int
 }
 
+// RecoveryDefaults is only for the closed maintenance surface before a damaged config is recovered.
+// It does not read or create content directories.
+func RecoveryDefaults() *Config {
+	cfg := &Config{}
+	applyDefaults(cfg)
+	cfg.Timezone, _ = ParseOffset(cfg.Site.UTCOffset)
+	return cfg
+}
+
 func Load(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {

@@ -16,6 +16,7 @@ import (
 )
 
 type Server struct {
+	userCleanupOnce    sync.Once
 	integrationMu      sync.Mutex
 	themeInstallMu     sync.Mutex
 	themeInstallCancel context.CancelFunc
@@ -122,4 +123,13 @@ func (s *Server) reloadConfig() error {
 		config.Abs(s.root, cfg.Paths.NotesDir),
 	)
 	return nil
+}
+
+// RequireRecovery keeps all normal routes closed without preventing authenticated recovery.
+func (s *Server) RequireRecovery() { s.restoreBlocked.Store(true) }
+func (s *Server) StartUserCleanup(ctx context.Context) {
+	if s.restoreBlocked.Load() {
+		return
+	}
+	s.userCleanupOnce.Do(func() { s.StartWikiAgentCleanup(); s.StartDraftCleanup(ctx) })
 }

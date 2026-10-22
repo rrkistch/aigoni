@@ -288,7 +288,9 @@ func (s *Server) StartSiteBuild(ctx context.Context) {
 		return
 	}
 	// Containers opt in so a new image refreshes the theme even with unchanged content.
-	_ = s.queueSiteBuild(s.env.FireflyRebuildOnStart)
+	if !s.restoreBlocked.Load() {
+		_ = s.queueSiteBuild(s.env.FireflyRebuildOnStart)
+	}
 	go s.siteBuildLoop(ctx)
 	go s.themeMaintenance(ctx)
 	// Reconcile external Markdown/config edits without putting private data into snapshots.
@@ -300,7 +302,9 @@ func (s *Server) StartSiteBuild(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				_ = s.queueSiteBuild(false)
+				if !s.restoreBlocked.Load() {
+					_ = s.queueSiteBuild(false)
+				}
 			}
 		}
 	}()
@@ -312,6 +316,9 @@ func (s *Server) siteBuildLoop(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-b.wake:
+		}
+		if s.restoreBlocked.Load() {
+			continue
 		}
 		b.mu.Lock()
 		if b.pending == nil {
@@ -335,6 +342,10 @@ func (s *Server) siteBuildLoop(ctx context.Context) {
 		}
 		if err == nil {
 			b.buildMu.Lock()
+			if s.restoreBlocked.Load() {
+				b.buildMu.Unlock()
+				continue
+			}
 			job, cancel := context.WithTimeout(ctx, 15*time.Minute)
 			b.mu.Lock()
 			b.cancel = cancel
@@ -353,6 +364,9 @@ func (s *Server) siteBuildLoop(ctx context.Context) {
 			_, err = os.Stat(filepath.Join(output, "_workspace", "index.html"))
 		}
 		// Recheck the public snapshot before activation, including out-of-band file edits.
+		if s.restoreBlocked.Load() {
+			continue
+		}
 		_ = s.queueSiteBuild(false)
 		b.mu.Lock()
 		var built fireflySnapshot

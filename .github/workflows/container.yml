@@ -40,11 +40,19 @@ jobs:
         with:
           persist-credentials: false
       - name: Build Linux amd64 image (includes Go tests)
+        if: ${{ !startsWith(github.ref, 'refs/tags/container-v') }}
         run: |
           docker build --platform linux/amd64 \
             --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
             --label "org.opencontainers.image.revision=$GITHUB_SHA" \
             -t aigoni-firefly:docker-smoke .
+      - name: Reuse verified main candidate for release
+        if: startsWith(github.ref, 'refs/tags/container-v')
+        run: |
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}:sha-$GITHUB_SHA"
+          docker pull "$IMAGE"
+          test "$(docker image inspect "$IMAGE" --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}')" = "$GITHUB_SHA"
+          docker tag "$IMAGE" aigoni-firefly:docker-smoke
       - name: Download published portable theme for install verification
         run: |
           mkdir -p .theme-artifacts

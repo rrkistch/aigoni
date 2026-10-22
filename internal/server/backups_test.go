@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http/httptest"
@@ -168,4 +169,35 @@ func TestBackupAPIPrivateRoundTripAndConflict(t *testing.T) {
 	if w = call("GET", s.adminURL("maintenance"), nil, false); w.Code != 200 || w.Header().Get("Cache-Control") != "no-store" {
 		t.Fatal("independent recovery entry unavailable", w.Code)
 	}
+}
+func TestClosedRecoveryStartsWithoutPublishing(t *testing.T) {
+	s := fireflyTestServer(t)
+	cfg, _ := yaml.Marshal(s.cfg)
+	writeFile(t, filepath.Join(s.root, "config.yaml"), string(cfg))
+	s.RequireRecovery()
+	s.siteBuild.run = func(context.Context, string, string) error { t.Error("compiler ran before recovery"); return nil }
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	s.StartSiteBuild(ctx)
+	r := httptest.NewRecorder()
+	s.Handler().ServeHTTP(r, httptest.NewRequest("GET", "/", nil))
+	if r.Code != 503 {
+		t.Fatal("normal data exposed in recovery", r.Code)
+	}
+	r = httptest.NewRecorder()
+	s.Handler().ServeHTTP(r, httptest.NewRequest("GET", s.adminURL("maintenance"), nil))
+	if r.Code != 200 {
+		t.Fatal("recovery UI unavailable", r.Code)
+	}
+	cookie, csrf := createAdminAPISession(t, s)
+	request := httptest.NewRequest("POST", adminAPIBasePath+"/backups/recover", strings.NewReader(`{"confirm":true}`))
+	request.AddCookie(cookie)
+	request.Header.Set("X-CSRF-Token", csrf)
+	s.siteBuild.run = fakeRelease
+	r = httptest.NewRecorder()
+	s.Handler().ServeHTTP(r, request)
+	if r.Code != 200 {
+		t.Fatal(r.Code, r.Body.String())
+	}
+	waitBuild(t, s, "published")
 }

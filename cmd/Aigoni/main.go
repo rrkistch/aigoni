@@ -22,34 +22,40 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	recoveryRequired := false
 	if err := sitebackup.Recover(root); err != nil {
 		var cleanup *sitebackup.CleanupError
 		if !errors.As(err, &cleanup) {
-			log.Fatal("Data recovery required before startup: ", err)
+			recoveryRequired = true
+			log.Printf("Data recovery required; starting closed maintenance entry: %v", err)
+		} else {
+			log.Printf("Restore cleanup pending: %v", err)
 		}
-		log.Printf("Restore cleanup pending: %v", err)
 	}
-	if err := aigoni.EnsureRuntimeFiles(root); err != nil {
-		log.Fatal(err)
-	}
-	cfg, err := config.Load(filepath.Join(root, "config.yaml"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := aigoni.EnsureRuntimeDirs(root,
-		cfg.Paths.ContentDir,
-		cfg.Paths.PostsDir,
-		cfg.Paths.PagesDir,
-		cfg.Paths.NotesDir,
-		cfg.Paths.PublicDir,
-		cfg.Paths.UploadsDir,
-		"wiki",
-		"wiki/entities",
-		"wiki/concepts",
-		"wiki/sources",
-		"wiki/syntheses",
-	); err != nil {
-		log.Fatal(err)
+	cfg := config.RecoveryDefaults()
+	if !recoveryRequired {
+		if err := aigoni.EnsureRuntimeFiles(root); err != nil {
+			log.Fatal(err)
+		}
+		cfg, err = config.Load(filepath.Join(root, "config.yaml"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := aigoni.EnsureRuntimeDirs(root,
+			cfg.Paths.ContentDir,
+			cfg.Paths.PostsDir,
+			cfg.Paths.PagesDir,
+			cfg.Paths.NotesDir,
+			cfg.Paths.PublicDir,
+			cfg.Paths.UploadsDir,
+			"wiki",
+			"wiki/entities",
+			"wiki/concepts",
+			"wiki/sources",
+			"wiki/syntheses",
+		); err != nil {
+			log.Fatal(err)
+		}
 	}
 	env, err := config.LoadEnv(filepath.Join(root, ".env"))
 	if err != nil {
@@ -64,10 +70,12 @@ func main() {
 		log.Fatal(err)
 	}
 	srv := server.NewWithFrontendFS(root, cfg, env, webFrontendFS, adminFrontendFS)
+	if recoveryRequired {
+		srv.RequireRecovery()
+	}
 	cleanupCtx, cancelCleanup := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancelCleanup()
-	srv.StartWikiAgentCleanup()
-	srv.StartDraftCleanup(cleanupCtx)
+	srv.StartUserCleanup(cleanupCtx)
 	srv.StartSiteBuild(cleanupCtx)
 
 	// 显式 http.Server 设置基础超时，避免慢连接长期占住连接。

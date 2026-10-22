@@ -630,6 +630,7 @@ func (s *Server) backupRecoverAPI(w http.ResponseWriter, r *http.Request) {
 		writeAdminError(w, 500, "recovery_failed", "配置仍无法读取，请检查数据目录。")
 		return
 	}
+	s.restoreBlocked.Store(false)
 	if s.siteBuild != nil {
 		s.siteBuild.mu.Lock()
 		s.siteBuild.state.Blocked = true
@@ -639,10 +640,16 @@ func (s *Server) backupRecoverAPI(w http.ResponseWriter, r *http.Request) {
 			err = s.queueSiteBuild(true)
 		}
 		if err != nil {
+			s.restoreBlocked.Store(true)
 			writeAdminError(w, 500, "recovery_failed", "数据一致，但维护状态或重建任务无法保存，请检查磁盘后重试。")
 			return
 		}
 	}
-	s.restoreBlocked.Store(false)
+	s.previewMu.Lock()
+	ctx := s.previewContext
+	s.previewMu.Unlock()
+	if ctx != nil {
+		s.StartUserCleanup(ctx)
+	}
 	writeAdminJSON(w, 200, map[string]any{"recovered": true, "message": "数据已恢复一致状态，公开网站等待重新构建。"})
 }
